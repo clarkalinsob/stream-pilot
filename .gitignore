@@ -1,20 +1,33 @@
 # dependencies
 node_modules/
+package-lock.json
+yarn.lock
 
 # build output
 dist/
 .next/
 out/
+*.tsbuildinfo
 
 # env
 .env
+.env.*
+!.env.example
 
-# prisma
-api/node_modules/.prisma/
+# prisma (generated client lives in node_modules)
+.pnpm-store/
 
 # logs
 *.log
 npm-debug.log*
+pnpm-debug.log*
+
+# test / coverage
+coverage/
+
+# deploy
+.vercel
+.turbo
 
 # OS
 .DS_Store

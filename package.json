@@ -1,0 +1,13 @@
+{
+  "name": "stream-pilot",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "dev:api": "pnpm --filter stream-pilot-api start:dev",
+    "dev:app": "pnpm --filter stream-pilot-app dev",
+    "build": "pnpm -r build",
+    "migrate": "pnpm --filter stream-pilot-api prisma:migrate",
+    "migrate:deploy": "pnpm --filter stream-pilot-api exec prisma migrate deploy"
+  }
+}

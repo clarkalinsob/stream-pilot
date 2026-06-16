@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
+import { AuthInitializer } from '@/components/auth/auth-initializer';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Stream Pilot',
-  description: 'Stream Pilot Application',
+  description: 'Stream Pilot application',
 };
 
 export default function RootLayout({
@@ -13,7 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="min-h-screen">
+        <AuthInitializer />
+        {children}
+      </body>
     </html>
   );
 }
