@@ -6,6 +6,7 @@ import type {
   PaginationMeta,
   ProductionDetail,
   ProductionSummary,
+  ReplaceAssignmentsData,
   RunSheetItem,
   UpdateProductionData,
 } from '@/types/production';
@@ -32,6 +33,10 @@ type ProductionsState = {
   replaceRunSheet: (
     id: string,
     items: RunSheetItem[],
+  ) => Promise<ProductionDetail>;
+  replaceAssignments: (
+    id: string,
+    data: ReplaceAssignmentsData,
   ) => Promise<ProductionDetail>;
   deleteProduction: (id: string, currentPage?: number) => Promise<number>;
   clearError: () => void;
@@ -111,6 +116,20 @@ export const useProductionsStore = create<ProductionsState>((set, get) => ({
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : 'Failed to save run sheet';
+      set({ isSaving: false, error: message });
+      throw err;
+    }
+  },
+
+  replaceAssignments: async (id, data) => {
+    set({ isSaving: true, error: null });
+    try {
+      const updated = await productionsApi.replaceAssignments(id, data);
+      set({ isSaving: false, current: updated });
+      return updated;
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : 'Failed to save assignments';
       set({ isSaving: false, error: message });
       throw err;
     }

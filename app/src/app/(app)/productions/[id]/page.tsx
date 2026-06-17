@@ -10,6 +10,7 @@ import { ErrorAlert } from '@/components/shared/error-alert';
 import { ProductionOverviewPanel } from '@/components/productions/production-overview-panel';
 import type { ProductionDetailsValues } from '@/components/productions/production-details-fields';
 import { RunSheetView } from '@/components/productions/run-sheet-view';
+import { ProductionAssignmentsPanel } from '@/components/productions/production-assignments-panel';
 import { fromApiItems, toApiPayload, type RunSheetSegmentDraft } from '@/lib/run-sheet';
 import { useProductionsStore } from '@/stores/productions-store';
 
@@ -34,6 +35,7 @@ function ProductionDetailContent() {
     fetchProduction,
     updateProduction,
     replaceRunSheet,
+    replaceAssignments,
     deleteProduction,
     clearError,
     clearCurrent,
@@ -196,25 +198,38 @@ function ProductionDetailContent() {
         className="print:hidden"
       />
 
-      <RunSheetView
-        productionTitle={current.title}
-        eventDate={details.eventDate || current.eventDate}
-        startTime={details.startTime || current.startTime}
-        segments={runSheetSegments}
-        totalDurationMinutes={current.totalDurationMinutes}
-        isEditing={isEditingRunSheet}
-        draftItems={segments}
-        onDraftChange={handleSegmentsChange}
-        onEdit={() => setIsEditingRunSheet(true)}
-        onCancel={handleCancelRunSheetEdit}
-        onSave={handleSaveRunSheet}
-        isSaving={isSaving}
-        saveDisabled={
-          !segmentsDirty ||
-          segments.length === 0 ||
-          !segments.every((s) => s.title.trim())
-        }
-      />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,30rem)] print:block print:gap-0">
+        <RunSheetView
+          className="min-w-0 flex-1"
+          productionTitle={current.title}
+          eventDate={details.eventDate || current.eventDate}
+          startTime={details.startTime || current.startTime}
+          segments={runSheetSegments}
+          totalDurationMinutes={current.totalDurationMinutes}
+          isEditing={isEditingRunSheet}
+          draftItems={segments}
+          onDraftChange={handleSegmentsChange}
+          onEdit={() => setIsEditingRunSheet(true)}
+          onCancel={handleCancelRunSheetEdit}
+          onSave={handleSaveRunSheet}
+          isSaving={isSaving}
+          saveDisabled={
+            !segmentsDirty ||
+            segments.length === 0 ||
+            !segments.every((s) => s.title.trim())
+          }
+        />
+
+        <ProductionAssignmentsPanel
+          className="w-full min-w-0"
+          crewAssignments={current.crewAssignments ?? []}
+          equipmentAssignments={current.equipmentAssignments ?? []}
+          isSaving={isSaving}
+          onSave={async (data) => {
+            await replaceAssignments(id, data);
+          }}
+        />
+      </div>
 
       <DangerZone
         description={`Permanently delete "${current.title}" and its run sheet. This action cannot be undone.`}

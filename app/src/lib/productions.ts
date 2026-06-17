@@ -3,6 +3,7 @@ import type {
   CreateProductionData,
   PaginatedProductions,
   ProductionDetail,
+  ReplaceAssignmentsData,
   UpdateProductionData,
   RunSheetItem,
 } from '@/types/production';
@@ -48,6 +49,14 @@ export function replaceRunSheet(id: string, items: RunSheetItem[]) {
   return apiFetch<ProductionDetail>(`/productions/${id}/run-sheet`, {
     method: 'PUT',
     body: JSON.stringify({ items }),
+    requireSession: true,
+  });
+}
+
+export function replaceAssignments(id: string, data: ReplaceAssignmentsData) {
+  return apiFetch<ProductionDetail>(`/productions/${id}/assignments`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
     requireSession: true,
   });
 }

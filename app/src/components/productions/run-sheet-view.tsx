@@ -318,9 +318,9 @@ export function RunSheetView({
       <header className="border-b px-6 py-4 print:border-0 print:px-0 print:pb-3 print:pt-0">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground print:text-black">
+            <h2 className="text-lg font-semibold tracking-tight print:text-black">
               Run Sheet
-            </p>
+            </h2>
             {(productionTitle || eventDate) && (
               <div className="mt-1 hidden print:block">
                 {productionTitle && (

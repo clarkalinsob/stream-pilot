@@ -1,4 +1,38 @@
+import type { CrewRole } from '@/types/crew';
+
 export type ProductionStatus = 'DRAFT' | 'SCHEDULED' | 'COMPLETED';
+
+export type { CrewRole };
+
+export type EquipmentCategory =
+  | 'CAMERA'
+  | 'AUDIO'
+  | 'LIGHTING'
+  | 'ELECTRICAL'
+  | 'VIDEO'
+  | 'LAPTOP'
+  | 'PC'
+  | 'OTHER';
+
+export type CrewAssignment = {
+  crewMemberId: string;
+  name: string;
+  role: CrewRole;
+  email: string | null;
+  phone: string | null;
+};
+
+export type EquipmentAssignment = {
+  equipmentId: string;
+  name: string;
+  category: EquipmentCategory;
+  quantity: number;
+};
+
+export type ReplaceAssignmentsData = {
+  crewMemberIds: string[];
+  equipment: { equipmentId: string; quantity?: number }[];
+};
 
 export type RunSheetItem = {
   id?: string;
@@ -21,6 +55,8 @@ export type ProductionSummary = {
 export type ProductionDetail = ProductionSummary & {
   description: string | null;
   runSheetItems: RunSheetItemResponse[];
+  crewAssignments: CrewAssignment[];
+  equipmentAssignments: EquipmentAssignment[];
   createdAt: string;
   updatedAt: string;
 };

@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "CrewRole" AS ENUM ('CAMERA', 'AUDIO', 'DIRECTOR', 'TALENT', 'VIDEO', 'EDITOR', 'PRODUCER', 'FLOOR', 'OTHER');
+CREATE TYPE "CrewRole" AS ENUM ('CAMERAMAN', 'AUDIOMAN', 'OPERATOR', 'MIC_MAN', 'RUNNER', 'DIRECTOR', 'TALENT', 'VIDEO', 'EDITOR', 'PRODUCER', 'FLOOR', 'OTHER');
 
 -- CreateEnum
 CREATE TYPE "EquipmentCategory" AS ENUM ('CAMERA', 'AUDIO', 'LIGHTING', 'ELECTRICAL', 'VIDEO', 'LAPTOP', 'PC', 'OTHER');
@@ -10,7 +10,8 @@ CREATE TABLE "CrewMember" (
     "userId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "role" "CrewRole" NOT NULL,
-    "contact" TEXT,
+    "email" TEXT,
+    "phone" TEXT,
     "notes" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,

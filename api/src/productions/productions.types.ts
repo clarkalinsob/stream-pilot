@@ -19,7 +19,8 @@ export type CrewAssignmentResponse = {
   crewMemberId: string;
   name: string;
   role: CrewRole;
-  contact: string | null;
+  email: string | null;
+  phone: string | null;
 };
 
 export type EquipmentAssignmentResponse = {
@@ -68,7 +69,8 @@ type ProductionWithItems = Production & {
       id: string;
       name: string;
       role: CrewRole;
-      contact: string | null;
+      email: string | null;
+      phone: string | null;
     };
   }[];
   equipmentAssignments: {
@@ -91,7 +93,7 @@ export const productionDetailInclude = {
   crewAssignments: {
     include: {
       crewMember: {
-        select: { id: true, name: true, role: true, contact: true },
+        select: { id: true, name: true, role: true, email: true, phone: true },
       },
     },
   },
@@ -133,7 +135,8 @@ function toCrewAssignments(
     crewMemberId: assignment.crewMember.id,
     name: assignment.crewMember.name,
     role: assignment.crewMember.role,
-    contact: assignment.crewMember.contact,
+    email: assignment.crewMember.email,
+    phone: assignment.crewMember.phone,
   }));
 }
 

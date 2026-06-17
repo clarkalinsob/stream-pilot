@@ -4,7 +4,8 @@ export type CrewMemberSummary = {
   id: string;
   name: string;
   role: CrewRole;
-  contact: string | null;
+  email: string | null;
+  phone: string | null;
   assignmentCount: number;
 };
 
@@ -35,7 +36,8 @@ export function toCrewMemberSummary(member: CrewMemberWithCount): CrewMemberSumm
     id: member.id,
     name: member.name,
     role: member.role,
-    contact: member.contact,
+    email: member.email,
+    phone: member.phone,
     assignmentCount: member._count.assignments,
   };
 }

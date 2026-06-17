@@ -1,11 +1,10 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Clapperboard, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Clapperboard } from 'lucide-react';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
+import { CreateButton } from '@/components/shared/create-button';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorAlert } from '@/components/shared/error-alert';
 import { PageHeader } from '@/components/shared/page-header';
@@ -60,12 +59,7 @@ function ProductionsPageContent() {
         title="Productions"
         description="Plan your livestream shows and run-of-show segments."
       >
-        <Button asChild>
-          <Link href="/productions/new">
-            <Plus />
-            New Production
-          </Link>
-        </Button>
+        <CreateButton href="/productions/new">New Production</CreateButton>
       </PageHeader>
 
       <ErrorAlert message={error ?? ''} onDismiss={clearError} />
@@ -76,12 +70,7 @@ function ProductionsPageContent() {
           title="No productions yet"
           description="Create your first production with a run sheet to get started."
           action={
-            <Button asChild>
-              <Link href="/productions/new">
-                <Plus />
-                New production
-              </Link>
-            </Button>
+            <CreateButton href="/productions/new">New Production</CreateButton>
           }
         />
       ) : (

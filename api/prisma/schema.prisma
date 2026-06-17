@@ -14,8 +14,11 @@ enum ProductionStatus {
 }
 
 enum CrewRole {
-  CAMERA
-  AUDIO
+  CAMERAMAN
+  AUDIOMAN
+  OPERATOR
+  MIC_MAN
+  RUNNER
   DIRECTOR
   TALENT
   VIDEO
@@ -83,7 +86,8 @@ model CrewMember {
   userId    String
   name      String
   role      CrewRole
-  contact   String?
+  email     String?
+  phone     String?
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

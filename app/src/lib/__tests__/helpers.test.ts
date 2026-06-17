@@ -7,6 +7,10 @@ import {
   formatTimeValue,
 } from '@/lib/format';
 import {
+  formatCrewRole,
+  formatEquipmentCategory,
+} from '@/lib/resources';
+import {
   computeSegmentStartTimes,
   createEmptySegment,
   fromApiItems,
@@ -155,5 +159,22 @@ describe('run-sheet helpers', () => {
         {},
       ]),
     ).toBe(15);
+  });
+});
+
+describe('formatCrewRole', () => {
+  it('formats crew roles for display', () => {
+    expect(formatCrewRole('CAMERAMAN')).toBe('Cameraman');
+    expect(formatCrewRole('AUDIOMAN')).toBe('Audioman');
+    expect(formatCrewRole('MIC_MAN')).toBe('Mic Man');
+    expect(formatCrewRole('VIDEO')).toBe('Video');
+    expect(formatCrewRole('FLOOR')).toBe('Floor');
+  });
+});
+
+describe('formatEquipmentCategory', () => {
+  it('formats equipment categories for display', () => {
+    expect(formatEquipmentCategory('LAPTOP')).toBe('Laptop');
+    expect(formatEquipmentCategory('ELECTRICAL')).toBe('Electrical');
   });
 });

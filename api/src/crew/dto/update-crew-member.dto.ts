@@ -1,5 +1,12 @@
 import { CrewRole } from '@prisma/client';
-import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MinLength,
+  ValidateIf,
+} from 'class-validator';
 
 export class UpdateCrewMemberDto {
   @IsOptional()
@@ -12,8 +19,13 @@ export class UpdateCrewMemberDto {
   role?: CrewRole;
 
   @IsOptional()
+  @ValidateIf((_, value) => value != null && value !== '')
+  @IsEmail()
+  email?: string | null;
+
+  @IsOptional()
   @IsString()
-  contact?: string;
+  phone?: string | null;
 
   @IsOptional()
   @IsString()
