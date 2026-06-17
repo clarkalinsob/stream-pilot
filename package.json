@@ -7,7 +7,12 @@
     "dev:api": "pnpm --filter stream-pilot-api start:dev",
     "dev:app": "pnpm --filter stream-pilot-app dev",
     "build": "pnpm -r build",
+    "format": "prettier --write \"api/src/**/*.{ts,tsx}\" \"app/src/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"api/src/**/*.{ts,tsx}\" \"app/src/**/*.{ts,tsx}\"",
     "migrate": "pnpm --filter stream-pilot-api prisma:migrate",
     "migrate:deploy": "pnpm --filter stream-pilot-api exec prisma migrate deploy"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3"
   }
 }

@@ -7,11 +7,7 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    PrismaModule,
-    AuthModule,
-  ],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, AuthModule],
   controllers: [AppController],
   providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
 })

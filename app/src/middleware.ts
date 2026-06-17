@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const publicPaths = ['/auth'];
+const publicPaths = ['/login', '/signup'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -16,10 +16,14 @@ export function middleware(request: NextRequest) {
   );
 
   if (!isPublic && !hasToken) {
-    return NextResponse.redirect(new URL('/auth', request.url));
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  if (isPublic && hasToken && pathname.startsWith('/auth')) {
+  if (
+    isPublic &&
+    hasToken &&
+    (pathname === '/login' || pathname === '/signup')
+  ) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 

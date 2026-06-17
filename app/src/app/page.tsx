@@ -21,7 +21,7 @@ export default function Home() {
 
   async function handleLogout() {
     await logout();
-    router.push('/auth');
+    router.push('/login');
   }
 
   return (

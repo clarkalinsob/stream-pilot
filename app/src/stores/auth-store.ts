@@ -39,8 +39,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       const { user } = await authApi.login(email, password);
       set({ user, isLoading: false });
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : 'Login failed';
+      const message = err instanceof ApiError ? err.message : 'Login failed';
       set({ isLoading: false, error: message });
       throw err;
     }

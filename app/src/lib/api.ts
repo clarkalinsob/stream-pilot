@@ -27,8 +27,11 @@ export async function apiFetch<T>(
     if (typeof window !== 'undefined') {
       const { useAuthStore } = await import('@/stores/auth-store');
       useAuthStore.getState().reset();
-      if (!window.location.pathname.startsWith('/auth')) {
-        window.location.href = '/auth';
+      if (
+        !window.location.pathname.startsWith('/login') &&
+        !window.location.pathname.startsWith('/signup')
+      ) {
+        window.location.href = '/login';
       }
     }
     throw new ApiError('Session expired', 401);
