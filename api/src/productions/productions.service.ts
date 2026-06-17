@@ -1,31 +1,64 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Production } from '@prisma/client';
+import { Prisma, Production } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductionDto } from './dto/create-production.dto';
+import { ListProductionsQueryDto } from './dto/list-productions-query.dto';
 import { ReplaceRunSheetDto } from './dto/replace-run-sheet.dto';
 import { UpdateProductionDto } from './dto/update-production.dto';
 import {
+  computeEndTimeDate,
+  parseDateString,
+  parseTimeString,
+  sumDurationMinutes,
+  toTimeString,
+} from './event-schedule';
+import {
+  PaginatedProductionsResponse,
   ProductionDetail,
-  ProductionSummary,
   toProductionDetail,
   toProductionSummary,
 } from './productions.types';
+
+type PrismaTx = Prisma.TransactionClient;
 
 @Injectable()
 export class ProductionsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(userId: string): Promise<ProductionSummary[]> {
-    const productions = await this.prisma.production.findMany({
-      where: { userId },
-      include: {
-        _count: { select: { runSheetItems: true } },
-        runSheetItems: { select: { durationMinutes: true } },
-      },
-      orderBy: { updatedAt: 'desc' },
-    });
+  async findAll(
+    userId: string,
+    query: ListProductionsQueryDto,
+  ): Promise<PaginatedProductionsResponse> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const skip = (page - 1) * limit;
 
-    return productions.map(toProductionSummary);
+    const where = { userId };
+
+    const [productions, total] = await Promise.all([
+      this.prisma.production.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          _count: { select: { runSheetItems: true } },
+          runSheetItems: { select: { durationMinutes: true } },
+        },
+        orderBy: [
+          { eventDate: { sort: 'desc', nulls: 'last' } },
+          { startTime: { sort: 'desc', nulls: 'last' } },
+          { updatedAt: 'desc' },
+        ],
+      }),
+      this.prisma.production.count({ where }),
+    ]);
+
+    const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+
+    return {
+      data: productions.map(toProductionSummary),
+      meta: { page, limit, total, totalPages },
+    };
   }
 
   async findOne(userId: string, id: string): Promise<ProductionDetail> {
@@ -44,13 +77,19 @@ export class ProductionsService {
   }
 
   async create(userId: string, dto: CreateProductionDto): Promise<ProductionDetail> {
+    const totalDuration = sumDurationMinutes(dto.runSheetItems);
+    const startTime = parseTimeString(dto.startTime);
+    const endTime = computeEndTimeDate(dto.startTime, totalDuration);
+
     const production = await this.prisma.$transaction(async (tx) => {
       return tx.production.create({
         data: {
           userId,
           title: dto.title,
           description: dto.description,
-          eventDate: dto.eventDate ? new Date(dto.eventDate) : undefined,
+          eventDate: parseDateString(dto.eventDate),
+          startTime,
+          endTime: endTime ?? undefined,
           runSheetItems: {
             create: dto.runSheetItems.map((item, index) => ({
               sequence: index + 1,
@@ -76,19 +115,30 @@ export class ProductionsService {
   ): Promise<ProductionDetail> {
     await this.findOwnedOrThrow(userId, id);
 
-    const production = await this.prisma.production.update({
-      where: { id },
-      data: {
-        ...(dto.title !== undefined && { title: dto.title }),
-        ...(dto.description !== undefined && { description: dto.description }),
-        ...(dto.eventDate !== undefined && {
-          eventDate: dto.eventDate ? new Date(dto.eventDate) : null,
-        }),
-        ...(dto.status !== undefined && { status: dto.status }),
-      },
-      include: {
-        runSheetItems: { orderBy: { sequence: 'asc' } },
-      },
+    const production = await this.prisma.$transaction(async (tx) => {
+      await tx.production.update({
+        where: { id },
+        data: {
+          ...(dto.title !== undefined && { title: dto.title }),
+          ...(dto.description !== undefined && { description: dto.description }),
+          ...(dto.eventDate !== undefined && {
+            eventDate: dto.eventDate ? parseDateString(dto.eventDate) : null,
+          }),
+          ...(dto.startTime !== undefined && {
+            startTime: dto.startTime ? parseTimeString(dto.startTime) : null,
+          }),
+          ...(dto.status !== undefined && { status: dto.status }),
+        },
+      });
+
+      await this.syncEndTime(tx, id);
+
+      return tx.production.findUniqueOrThrow({
+        where: { id },
+        include: {
+          runSheetItems: { orderBy: { sequence: 'asc' } },
+        },
+      });
     });
 
     return toProductionDetail(production);
@@ -114,6 +164,8 @@ export class ProductionsService {
         })),
       });
 
+      await this.syncEndTime(tx, id);
+
       return tx.production.findUniqueOrThrow({
         where: { id },
         include: {
@@ -129,6 +181,23 @@ export class ProductionsService {
     await this.findOwnedOrThrow(userId, id);
     await this.prisma.production.delete({ where: { id } });
     return { ok: true };
+  }
+
+  private async syncEndTime(tx: PrismaTx, productionId: string): Promise<void> {
+    const production = await tx.production.findUniqueOrThrow({
+      where: { id: productionId },
+      include: { runSheetItems: true },
+    });
+
+    const startTimeStr = toTimeString(production.startTime);
+    const totalDuration = sumDurationMinutes(production.runSheetItems);
+
+    await tx.production.update({
+      where: { id: productionId },
+      data: {
+        endTime: computeEndTimeDate(startTimeStr, totalDuration),
+      },
+    });
   }
 
   private async findOwnedOrThrow(userId: string, id: string): Promise<Production> {

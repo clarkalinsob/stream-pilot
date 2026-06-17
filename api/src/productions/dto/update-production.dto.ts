@@ -1,5 +1,12 @@
 import { ProductionStatus } from '@prisma/client';
-import { IsDateString, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+  Matches,
+  MinLength,
+} from 'class-validator';
 
 export class UpdateProductionDto {
   @IsOptional()
@@ -14,6 +21,11 @@ export class UpdateProductionDto {
   @IsOptional()
   @IsDateString()
   eventDate?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{2}:\d{2}(:\d{2})?$/)
+  startTime?: string;
 
   @IsOptional()
   @IsEnum(ProductionStatus)

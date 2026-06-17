@@ -28,7 +28,9 @@ model Production {
   userId      String
   title       String
   description String?
-  eventDate   DateTime?
+  eventDate   DateTime?        @db.Date
+  startTime   DateTime?        @db.Time(0)
+  endTime     DateTime?        @db.Time(0)
   status      ProductionStatus @default(DRAFT)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt

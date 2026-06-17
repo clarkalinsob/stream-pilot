@@ -1,4 +1,5 @@
 import { Production, ProductionStatus, RunSheetItem } from '@prisma/client';
+import { toDateString, toTimeString } from './event-schedule';
 
 export type RunSheetItemResponse = {
   id: string;
@@ -12,6 +13,8 @@ export type ProductionSummary = {
   id: string;
   title: string;
   eventDate: string | null;
+  startTime: string | null;
+  endTime: string | null;
   status: ProductionStatus;
   segmentCount: number;
   totalDurationMinutes: number;
@@ -22,6 +25,18 @@ export type ProductionDetail = ProductionSummary & {
   runSheetItems: RunSheetItemResponse[];
   createdAt: string;
   updatedAt: string;
+};
+
+export type PaginationMeta = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+export type PaginatedProductionsResponse = {
+  data: ProductionSummary[];
+  meta: PaginationMeta;
 };
 
 type ProductionWithItems = Production & {
@@ -47,11 +62,19 @@ function sumDurationMinutes(items: { durationMinutes: number | null }[]): number
   return items.reduce((sum, item) => sum + (item.durationMinutes ?? 0), 0);
 }
 
+function toScheduleFields(production: Production) {
+  return {
+    eventDate: toDateString(production.eventDate),
+    startTime: toTimeString(production.startTime),
+    endTime: toTimeString(production.endTime),
+  };
+}
+
 export function toProductionSummary(production: ProductionWithCount): ProductionSummary {
   return {
     id: production.id,
     title: production.title,
-    eventDate: production.eventDate?.toISOString() ?? null,
+    ...toScheduleFields(production),
     status: production.status,
     segmentCount: production._count.runSheetItems,
     totalDurationMinutes: sumDurationMinutes(production.runSheetItems),
@@ -65,7 +88,7 @@ export function toProductionDetail(production: ProductionWithItems): ProductionD
     id: production.id,
     title: production.title,
     description: production.description,
-    eventDate: production.eventDate?.toISOString() ?? null,
+    ...toScheduleFields(production),
     status: production.status,
     segmentCount: items.length,
     totalDurationMinutes: sumDurationMinutes(production.runSheetItems),

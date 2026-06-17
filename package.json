@@ -10,7 +10,8 @@
     "format": "prettier --write \"api/src/**/*.{ts,tsx}\" \"app/src/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"api/src/**/*.{ts,tsx}\" \"app/src/**/*.{ts,tsx}\"",
     "migrate": "pnpm --filter stream-pilot-api prisma:migrate",
-    "migrate:deploy": "pnpm --filter stream-pilot-api exec prisma migrate deploy"
+    "migrate:deploy": "pnpm --filter stream-pilot-api exec prisma migrate deploy",
+    "test": "pnpm --filter stream-pilot-app test"
   },
   "devDependencies": {
     "prettier": "^3.5.3"

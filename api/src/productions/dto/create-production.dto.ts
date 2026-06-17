@@ -3,8 +3,10 @@ import {
   ArrayMinSize,
   IsArray,
   IsDateString,
+  IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   MinLength,
   ValidateNested,
 } from 'class-validator';
@@ -19,9 +21,14 @@ export class CreateProductionDto {
   @IsString()
   description?: string;
 
-  @IsOptional()
   @IsDateString()
-  eventDate?: string;
+  @IsNotEmpty()
+  eventDate!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^\d{2}:\d{2}(:\d{2})?$/)
+  startTime!: string;
 
   @IsArray()
   @ArrayMinSize(1)

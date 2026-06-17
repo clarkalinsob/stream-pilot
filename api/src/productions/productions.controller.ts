@@ -7,10 +7,12 @@ import {
   Patch,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { UserResponse } from '../auth/auth.types';
 import { CreateProductionDto } from './dto/create-production.dto';
+import { ListProductionsQueryDto } from './dto/list-productions-query.dto';
 import { ReplaceRunSheetDto } from './dto/replace-run-sheet.dto';
 import { UpdateProductionDto } from './dto/update-production.dto';
 import { ProductionsService } from './productions.service';
@@ -20,8 +22,11 @@ export class ProductionsController {
   constructor(private productionsService: ProductionsService) {}
 
   @Get()
-  findAll(@CurrentUser() user: UserResponse) {
-    return this.productionsService.findAll(user.id);
+  findAll(
+    @CurrentUser() user: UserResponse,
+    @Query() query: ListProductionsQueryDto,
+  ) {
+    return this.productionsService.findAll(user.id, query);
   }
 
   @Post()
