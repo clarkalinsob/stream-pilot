@@ -2,9 +2,11 @@
 
 import {
   Field,
+  FieldError,
   FieldGroup,
   FieldLabel,
 } from '@/components/ui/field';
+import { InputWithCharacterCount } from '@/components/shared/character-count';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -31,6 +33,8 @@ type ProductionDetailsFieldsProps = {
   requireSchedule?: boolean;
   disabled?: boolean;
   compact?: boolean;
+  errors?: Partial<Record<'title' | 'eventDate' | 'startTime', string>>;
+  onFieldBlur?: (field: 'title' | 'eventDate' | 'startTime') => void;
 };
 
 export function ProductionDetailsFields({
@@ -40,19 +44,22 @@ export function ProductionDetailsFields({
   requireSchedule = false,
   disabled = false,
   compact = false,
+  errors,
+  onFieldBlur,
 }: ProductionDetailsFieldsProps) {
   return (
     <FieldGroup className={compact ? 'gap-5' : undefined}>
       <Field>
         <FieldLabel htmlFor="production-title">Title</FieldLabel>
-        <Input
+        <InputWithCharacterCount
           id="production-title"
           value={values.title}
           onChange={(e) => onChange({ ...values, title: e.target.value })}
+          onBlur={() => onFieldBlur?.('title')}
           placeholder="Friday Night Stream"
-          required
           disabled={disabled}
         />
+        {errors?.title ? <FieldError>{errors.title}</FieldError> : null}
       </Field>
       <div className="grid gap-5 sm:grid-cols-2">
         <Field>
@@ -64,9 +71,10 @@ export function ProductionDetailsFields({
             onChange={(e) =>
               onChange({ ...values, eventDate: e.target.value })
             }
-            required={requireSchedule}
+            onBlur={() => onFieldBlur?.('eventDate')}
             disabled={disabled}
           />
+          {errors?.eventDate ? <FieldError>{errors.eventDate}</FieldError> : null}
         </Field>
         <Field>
           <FieldLabel htmlFor="production-start-time">Start Time</FieldLabel>
@@ -77,9 +85,10 @@ export function ProductionDetailsFields({
             onChange={(e) =>
               onChange({ ...values, startTime: e.target.value })
             }
-            required={requireSchedule}
+            onBlur={() => onFieldBlur?.('startTime')}
             disabled={disabled}
           />
+          {errors?.startTime ? <FieldError>{errors.startTime}</FieldError> : null}
         </Field>
       </div>
       {showStatus && (

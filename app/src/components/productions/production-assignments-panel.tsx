@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { crewRoleBadgeClasses } from '@/components/resources/crew-role-badge';
+import { equipmentCategoryBadgeClasses } from '@/components/resources/equipment-category-badge';
 import { formatCrewRole, formatEquipmentCategory } from '@/lib/resources';
 import { cn } from '@/lib/utils';
 import { AssignmentPickerDialog } from './assignment-picker-dialog';
@@ -39,7 +41,7 @@ type AssignmentTagProps = {
   meta?: string;
   onRemove: () => void;
   disabled?: boolean;
-  className?: string;
+  variant?: 'crew' | 'equipment';
 };
 
 function AssignmentTag({
@@ -47,27 +49,37 @@ function AssignmentTag({
   meta,
   onRemove,
   disabled = false,
-  className,
+  variant = 'crew',
 }: AssignmentTagProps) {
+  const colorClasses =
+    variant === 'crew' ? crewRoleBadgeClasses : equipmentCategoryBadgeClasses;
+  const removeHoverClasses =
+    variant === 'crew'
+      ? 'hover:bg-violet-100 hover:text-violet-900 dark:hover:bg-violet-900/50 dark:hover:text-violet-100'
+      : 'hover:bg-teal-100 hover:text-teal-900 dark:hover:bg-teal-900/50 dark:hover:text-teal-100';
+
   return (
     <span
       className={cn(
-        'inline-flex max-w-full items-center gap-1 rounded-full border bg-muted/60 py-0.5 pl-2.5 pr-1 text-xs',
-        className,
+        'inline-flex max-w-full items-center gap-1.5 rounded-full border py-0.5 pl-2.5 pr-1 text-xs',
+        colorClasses,
       )}
     >
       <span className="truncate font-medium">{label}</span>
       {meta ? (
         <>
-          <span className="shrink-0 text-muted-foreground">·</span>
-          <span className="shrink-0 text-muted-foreground">{meta}</span>
+          <span className="shrink-0 opacity-50">·</span>
+          <span className="shrink-0 opacity-80">{meta}</span>
         </>
       ) : null}
       <button
         type="button"
         disabled={disabled}
         onClick={onRemove}
-        className="ml-0.5 shrink-0 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground disabled:opacity-50"
+        className={cn(
+          'ml-0.5 shrink-0 rounded-full p-0.5 opacity-70 transition-colors disabled:opacity-50',
+          removeHoverClasses,
+        )}
         aria-label={`Remove ${label}`}
       >
         <X className="size-3" />
@@ -146,6 +158,7 @@ export function ProductionAssignmentsPanel({
               key={member.crewMemberId}
               label={member.name}
               meta={formatCrewRole(member.role)}
+              variant="crew"
               disabled={isSaving}
               onRemove={() => handleRemoveCrew(member.crewMemberId)}
             />
@@ -162,6 +175,7 @@ export function ProductionAssignmentsPanel({
               key={item.equipmentId}
               label={`${item.name} × ${item.quantity}`}
               meta={formatEquipmentCategory(item.category)}
+              variant="equipment"
               disabled={isSaving}
               onRemove={() => handleRemoveEquipment(item.equipmentId)}
             />

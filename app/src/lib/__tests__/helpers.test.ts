@@ -11,6 +11,14 @@ import {
   formatEquipmentCategory,
 } from '@/lib/resources';
 import {
+  getCrewFormErrors,
+  getProductionDetailsErrors,
+  getRunSheetSegmentErrors,
+  getVisibleFieldErrors,
+  getVisibleRecordErrors,
+  isRunSheetValid,
+} from '@/lib/validation';
+import {
   computeSegmentStartTimes,
   createEmptySegment,
   fromApiItems,
@@ -176,5 +184,68 @@ describe('formatEquipmentCategory', () => {
   it('formats equipment categories for display', () => {
     expect(formatEquipmentCategory('LAPTOP')).toBe('Laptop');
     expect(formatEquipmentCategory('ELECTRICAL')).toBe('Electrical');
+  });
+});
+
+describe('validation', () => {
+  it('rejects fields over 50 characters', () => {
+    const longName = 'a'.repeat(51);
+    expect(getCrewFormErrors({ name: longName, email: '', phone: '' }).name).toBe(
+      'Name must be 50 characters or fewer.',
+    );
+    expect(
+      getProductionDetailsErrors({
+        title: longName,
+        eventDate: '',
+        startTime: '',
+      }).title,
+    ).toBe('Title must be 50 characters or fewer.');
+  });
+
+  it('allows descriptions and notes without length limits', () => {
+    const longText = 'a'.repeat(200);
+    expect(
+      getProductionDetailsErrors({
+        title: 'Show',
+        eventDate: '2026-06-20',
+        startTime: '10:00',
+      }),
+    ).toEqual({});
+    expect(
+      getRunSheetSegmentErrors([
+        { clientId: 'a', title: 'Intro', notes: longText },
+      ]),
+    ).toEqual({});
+  });
+
+  it('validates run sheet segment titles', () => {
+    expect(
+      isRunSheetValid([{ clientId: 'a', title: '', notes: '' }]),
+    ).toBe(false);
+    expect(
+      isRunSheetValid([{ clientId: 'a', title: 'Intro', notes: '' }]),
+    ).toBe(true);
+  });
+
+  it('hides validation errors until a field is touched or submit is attempted', () => {
+    const errors = getProductionDetailsErrors({
+      title: '',
+      eventDate: '',
+      startTime: '',
+    });
+
+    expect(getVisibleFieldErrors(errors, {}, false)).toEqual({});
+    expect(getVisibleFieldErrors(errors, { title: true }, false)).toEqual({
+      title: 'Title is required.',
+    });
+    expect(getVisibleFieldErrors(errors, {}, true)).toEqual(errors);
+
+    const segmentErrors = getRunSheetSegmentErrors([
+      { clientId: 'a', title: '', notes: '' },
+    ]);
+    expect(getVisibleRecordErrors(segmentErrors, {}, false)).toEqual({});
+    expect(getVisibleRecordErrors(segmentErrors, { a: true }, false)).toEqual({
+      a: 'Title is required.',
+    });
   });
 });

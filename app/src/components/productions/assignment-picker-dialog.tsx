@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Check } from 'lucide-react';
 import { FormDialog } from '@/components/shared/form-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -110,9 +111,9 @@ export function AssignmentPickerDialog({
       submitLabel="Save Assignments"
       isLoading={isSaving || isLoading}
       submitDisabled={isLoading}
-      contentClassName="sm:max-w-lg"
+      contentClassName="min-w-0 overflow-hidden sm:max-w-lg"
     >
-      <div className="space-y-3">
+      <div className="min-w-0 space-y-3">
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -121,7 +122,7 @@ export function AssignmentPickerDialog({
           className="h-8 text-sm"
         />
 
-        <Tabs defaultValue="crew">
+        <Tabs defaultValue="crew" className="min-w-0">
           <TabsList className="h-8 w-full">
             <TabsTrigger value="crew" className="flex-1 text-xs">
               Crew ({selectedCrewIds.length})
@@ -131,7 +132,10 @@ export function AssignmentPickerDialog({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="crew" className="mt-2 max-h-64 space-y-1 overflow-y-auto">
+          <TabsContent
+            value="crew"
+            className="mt-2 max-h-64 min-w-0 space-y-1 overflow-x-hidden overflow-y-auto"
+          >
             {filteredCrew.length === 0 ? (
               <p className="text-xs text-muted-foreground">
                 {isLoading ? 'Loading…' : 'No crew members found.'}
@@ -145,19 +149,20 @@ export function AssignmentPickerDialog({
                     type="button"
                     disabled={isSaving}
                     onClick={() => toggleCrew(member.id)}
+                    aria-pressed={selected}
                     className={cn(
-                      'flex w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-sm transition-colors',
+                      'flex w-full min-w-0 items-center gap-2 overflow-hidden rounded-md border px-2.5 py-1.5 text-left text-sm transition-colors',
                       selected
                         ? 'border-primary bg-primary/5'
                         : 'hover:bg-muted/50',
                     )}
                   >
-                    <span className="min-w-0 flex-1 truncate">{member.name}</span>
+                    <span className="min-w-0 flex-1 truncate" title={member.name}>
+                      {member.name}
+                    </span>
                     <CrewRoleBadge role={member.role} size="sm" />
                     {selected ? (
-                      <span className="shrink-0 text-[10px] text-muted-foreground">
-                        Selected
-                      </span>
+                      <Check className="size-3.5 shrink-0 text-primary" aria-hidden />
                     ) : null}
                   </button>
                 );
@@ -167,7 +172,7 @@ export function AssignmentPickerDialog({
 
           <TabsContent
             value="equipment"
-            className="mt-2 max-h-64 space-y-1 overflow-y-auto"
+            className="mt-2 max-h-64 min-w-0 space-y-1 overflow-x-hidden overflow-y-auto"
           >
             {filteredEquipment.length === 0 ? (
               <p className="text-xs text-muted-foreground">
@@ -182,19 +187,20 @@ export function AssignmentPickerDialog({
                     type="button"
                     disabled={isSaving}
                     onClick={() => toggleEquipment(item.id)}
+                    aria-pressed={selected}
                     className={cn(
-                      'flex w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-sm transition-colors',
+                      'flex w-full min-w-0 items-center gap-2 overflow-hidden rounded-md border px-2.5 py-1.5 text-left text-sm transition-colors',
                       selected
                         ? 'border-primary bg-primary/5'
                         : 'hover:bg-muted/50',
                     )}
                   >
-                    <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                    <span className="min-w-0 flex-1 truncate" title={item.name}>
+                      {item.name}
+                    </span>
                     <EquipmentCategoryBadge category={item.category} size="sm" />
                     {selected ? (
-                      <span className="shrink-0 text-[10px] text-muted-foreground">
-                        Selected
-                      </span>
+                      <Check className="size-3.5 shrink-0 text-primary" aria-hidden />
                     ) : null}
                   </button>
                 );

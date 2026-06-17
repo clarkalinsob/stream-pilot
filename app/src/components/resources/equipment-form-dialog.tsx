@@ -3,6 +3,11 @@
 import { useEffect, useState } from 'react';
 import { FormDialog } from '@/components/shared/form-dialog';
 import {
+  getEquipmentFormErrors,
+  getVisibleFieldErrors,
+  isEquipmentFormValid,
+} from '@/lib/validation';
+import {
   EquipmentFormFields,
   emptyEquipmentFormValues,
   type EquipmentFormValues,
@@ -28,18 +33,27 @@ export function EquipmentFormDialog({
   const [values, setValues] = useState<EquipmentFormValues>(
     emptyEquipmentFormValues(),
   );
+  const [touched, setTouched] = useState<Partial<Record<'name', boolean>>>({});
+  const [showAllErrors, setShowAllErrors] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setValues(initialValues ?? emptyEquipmentFormValues());
+    setTouched({});
+    setShowAllErrors(false);
   }, [open, initialValues]);
 
-  const quantity = Number.parseInt(values.quantity, 10);
-  const saveDisabled =
-    !values.name.trim() || Number.isNaN(quantity) || quantity < 1;
+  const errors = getVisibleFieldErrors(
+    getEquipmentFormErrors(values),
+    touched,
+    showAllErrors,
+  );
   const isEdit = mode === 'edit';
 
   async function handleSave() {
+    setShowAllErrors(true);
+    if (!isEquipmentFormValid(values)) return;
+
     try {
       await onSave(values);
       onOpenChange(false);
@@ -57,12 +71,15 @@ export function EquipmentFormDialog({
       onSubmit={handleSave}
       submitLabel={isEdit ? 'Save equipment' : 'Add Equipment'}
       isLoading={isSaving}
-      submitDisabled={saveDisabled}
     >
       <EquipmentFormFields
         values={values}
         onChange={setValues}
         disabled={isSaving}
+        errors={errors}
+        onFieldBlur={(field) =>
+          setTouched((prev) => ({ ...prev, [field]: true }))
+        }
       />
     </FormDialog>
   );

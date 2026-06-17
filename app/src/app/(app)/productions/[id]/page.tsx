@@ -12,6 +12,14 @@ import type { ProductionDetailsValues } from '@/components/productions/productio
 import { RunSheetView } from '@/components/productions/run-sheet-view';
 import { ProductionAssignmentsPanel } from '@/components/productions/production-assignments-panel';
 import { fromApiItems, toApiPayload, type RunSheetSegmentDraft } from '@/lib/run-sheet';
+import {
+  getProductionDetailsErrors,
+  getRunSheetSegmentErrors,
+  getVisibleFieldErrors,
+  getVisibleRecordErrors,
+  isProductionDetailsValid,
+  isRunSheetValid,
+} from '@/lib/validation';
 import { useProductionsStore } from '@/stores/productions-store';
 
 export default function ProductionDetailPage() {
@@ -56,6 +64,14 @@ function ProductionDetailContent() {
 
   const [segments, setSegments] = useState<RunSheetSegmentDraft[]>([]);
   const [segmentsDirty, setSegmentsDirty] = useState(false);
+  const [detailsTouched, setDetailsTouched] = useState<
+    Partial<Record<'title' | 'eventDate' | 'startTime', boolean>>
+  >({});
+  const [showDetailErrors, setShowDetailErrors] = useState(false);
+  const [segmentTouched, setSegmentTouched] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [showSegmentErrors, setShowSegmentErrors] = useState(false);
 
   useEffect(() => {
     fetchProduction(id);
@@ -74,6 +90,10 @@ function ProductionDetailContent() {
     setSegments(fromApiItems(current.runSheetItems));
     setDetailsDirty(false);
     setSegmentsDirty(false);
+    setDetailsTouched({});
+    setShowDetailErrors(false);
+    setSegmentTouched({});
+    setShowSegmentErrors(false);
   }
 
   useEffect(() => {
@@ -95,15 +115,21 @@ function ProductionDetailContent() {
   function handleCancelOverviewEdit() {
     syncFromCurrent();
     setIsEditingOverview(false);
+    setDetailsTouched({});
+    setShowDetailErrors(false);
   }
 
   function handleCancelRunSheetEdit() {
     syncFromCurrent();
     setIsEditingRunSheet(false);
+    setSegmentTouched({});
+    setShowSegmentErrors(false);
   }
 
   async function handleSaveDetails() {
     if (!current) return;
+    setShowDetailErrors(true);
+    if (!isProductionDetailsValid(details)) return;
     try {
       await updateProduction(id, {
         title: details.title.trim(),
@@ -114,18 +140,23 @@ function ProductionDetailContent() {
       });
       setDetailsDirty(false);
       setIsEditingOverview(false);
+      setDetailsTouched({});
+      setShowDetailErrors(false);
     } catch {
       // error in store
     }
   }
 
   async function handleSaveRunSheet() {
-    if (!current || segments.length === 0) return;
-    if (!segments.every((s) => s.title.trim())) return;
+    if (!current) return;
+    setShowSegmentErrors(true);
+    if (!isRunSheetValid(segments)) return;
     try {
       await replaceRunSheet(id, toApiPayload(segments));
       setSegmentsDirty(false);
       setIsEditingRunSheet(false);
+      setSegmentTouched({});
+      setShowSegmentErrors(false);
     } catch {
       // error in store
     }
@@ -176,6 +207,17 @@ function ProductionDetailContent() {
     ? segments.reduce((sum, s) => sum + (s.durationMinutes ?? 0), 0)
     : current.totalDurationMinutes;
 
+  const detailErrors = getVisibleFieldErrors(
+    getProductionDetailsErrors(details),
+    detailsTouched,
+    showDetailErrors,
+  );
+  const segmentErrors = getVisibleRecordErrors(
+    getRunSheetSegmentErrors(segments),
+    segmentTouched,
+    showSegmentErrors,
+  );
+
   return (
     <div className="flex flex-col gap-6 print:gap-0">
       <ProductionOverviewPanel
@@ -189,7 +231,11 @@ function ProductionDetailContent() {
         onCancelEdit={handleCancelOverviewEdit}
         onSave={handleSaveDetails}
         isSaving={isSaving}
-        saveDisabled={!detailsDirty || !details.title.trim()}
+        saveDisabled={!detailsDirty}
+        errors={detailErrors}
+        onFieldBlur={(field) =>
+          setDetailsTouched((prev) => ({ ...prev, [field]: true }))
+        }
       />
 
       <ErrorAlert
@@ -213,10 +259,10 @@ function ProductionDetailContent() {
           onCancel={handleCancelRunSheetEdit}
           onSave={handleSaveRunSheet}
           isSaving={isSaving}
-          saveDisabled={
-            !segmentsDirty ||
-            segments.length === 0 ||
-            !segments.every((s) => s.title.trim())
+          saveDisabled={!segmentsDirty}
+          segmentErrors={segmentErrors}
+          onSegmentTitleBlur={(clientId) =>
+            setSegmentTouched((prev) => ({ ...prev, [clientId]: true }))
           }
         />
 

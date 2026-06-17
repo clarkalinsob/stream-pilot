@@ -3,7 +3,9 @@
 import { useMemo } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { InputWithCharacterCount } from '@/components/shared/character-count';
 import { Textarea } from '@/components/ui/textarea';
 import {
   DragHandle,
@@ -50,6 +52,8 @@ type RunSheetViewProps = {
   onSave?: () => void;
   isSaving?: boolean;
   saveDisabled?: boolean;
+  segmentErrors?: Record<string, string>;
+  onSegmentTitleBlur?: (clientId: string) => void;
 };
 
 type EditableRunSheetRowProps = {
@@ -59,6 +63,8 @@ type EditableRunSheetRowProps = {
   startTime: Date | null;
   onUpdate: (patch: Partial<RunSheetSegmentDraft>) => void;
   onRemove: () => void;
+  titleError?: string;
+  onTitleBlur?: () => void;
 };
 
 function SegmentTime({ startTime }: { startTime: Date | null }) {
@@ -109,6 +115,8 @@ function EditableRunSheetRow({
   startTime,
   onUpdate,
   onRemove,
+  titleError,
+  onTitleBlur,
 }: EditableRunSheetRowProps) {
   const { setNodeRef, style, isDragging, dragHandleProps } = useSortableRow(
     item.clientId,
@@ -137,13 +145,17 @@ function EditableRunSheetRow({
         <SegmentTime startTime={startTime} />
       </td>
       <td className="max-w-0 py-2 pr-4 align-top">
-        <Input
+        <InputWithCharacterCount
           className="h-8"
           value={item.title}
           onChange={(e) => onUpdate({ title: e.target.value })}
+          onBlur={onTitleBlur}
           placeholder="Segment title"
           aria-label={`Segment ${index + 1} title`}
         />
+        {titleError ? (
+          <FieldError className="mt-1 text-xs">{titleError}</FieldError>
+        ) : null}
       </td>
       <td className="py-2 pr-4 align-top">
         <Input
@@ -204,6 +216,8 @@ export function RunSheetView({
   onSave,
   isSaving = false,
   saveDisabled = false,
+  segmentErrors,
+  onSegmentTitleBlur,
 }: RunSheetViewProps) {
   const segmentCount = isEditing ? draftItems.length : segments.length;
   const runtime = isEditing
@@ -272,6 +286,8 @@ export function RunSheetView({
               startTime={startTimes[index] ?? null}
               onUpdate={(patch) => updateDraft(index, patch)}
               onRemove={() => removeDraft(index)}
+              titleError={segmentErrors?.[item.clientId]}
+              onTitleBlur={() => onSegmentTitleBlur?.(item.clientId)}
             />
           ))
         : segments.map((segment, index) => (

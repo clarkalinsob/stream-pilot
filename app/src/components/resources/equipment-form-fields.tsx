@@ -2,11 +2,13 @@
 
 import {
   Field,
+  FieldError,
   FieldGroup,
   FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { InputWithCharacterCount } from '@/components/shared/character-count';
 import {
   Select,
   SelectContent,
@@ -31,25 +33,30 @@ type EquipmentFormFieldsProps = {
   values: EquipmentFormValues;
   onChange: (values: EquipmentFormValues) => void;
   disabled?: boolean;
+  errors?: Partial<Record<'name', string>>;
+  onFieldBlur?: (field: 'name') => void;
 };
 
 export function EquipmentFormFields({
   values,
   onChange,
   disabled = false,
+  errors,
+  onFieldBlur,
 }: EquipmentFormFieldsProps) {
   return (
     <FieldGroup>
       <Field>
         <FieldLabel htmlFor="equipment-name">Name</FieldLabel>
-        <Input
+        <InputWithCharacterCount
           id="equipment-name"
           value={values.name}
           onChange={(e) => onChange({ ...values, name: e.target.value })}
+          onBlur={() => onFieldBlur?.('name')}
           placeholder="Sony FX3"
-          required
           disabled={disabled}
         />
+        {errors?.name ? <FieldError>{errors.name}</FieldError> : null}
       </Field>
       <Field>
         <FieldLabel htmlFor="equipment-category">Category</FieldLabel>

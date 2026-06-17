@@ -3,6 +3,11 @@
 import { useEffect, useState } from 'react';
 import { FormDialog } from '@/components/shared/form-dialog';
 import {
+  getCrewFormErrors,
+  getVisibleFieldErrors,
+  isCrewFormValid,
+} from '@/lib/validation';
+import {
   CrewFormFields,
   emptyCrewFormValues,
   type CrewFormValues,
@@ -26,16 +31,29 @@ export function CrewFormDialog({
   onSave,
 }: CrewFormDialogProps) {
   const [values, setValues] = useState<CrewFormValues>(emptyCrewFormValues());
+  const [touched, setTouched] = useState<
+    Partial<Record<'name' | 'email' | 'phone', boolean>>
+  >({});
+  const [showAllErrors, setShowAllErrors] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setValues(initialValues ?? emptyCrewFormValues());
+    setTouched({});
+    setShowAllErrors(false);
   }, [open, initialValues]);
 
-  const saveDisabled = !values.name.trim();
+  const errors = getVisibleFieldErrors(
+    getCrewFormErrors(values),
+    touched,
+    showAllErrors,
+  );
   const isEdit = mode === 'edit';
 
   async function handleSave() {
+    setShowAllErrors(true);
+    if (!isCrewFormValid(values)) return;
+
     try {
       await onSave(values);
       onOpenChange(false);
@@ -53,9 +71,16 @@ export function CrewFormDialog({
       onSubmit={handleSave}
       submitLabel={isEdit ? 'Save crew member' : 'Add Crew Member'}
       isLoading={isSaving}
-      submitDisabled={saveDisabled}
     >
-      <CrewFormFields values={values} onChange={setValues} disabled={isSaving} />
+      <CrewFormFields
+        values={values}
+        onChange={setValues}
+        disabled={isSaving}
+        errors={errors}
+        onFieldBlur={(field) =>
+          setTouched((prev) => ({ ...prev, [field]: true }))
+        }
+      />
     </FormDialog>
   );
 }

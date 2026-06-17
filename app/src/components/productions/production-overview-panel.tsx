@@ -22,6 +22,8 @@ type ProductionOverviewPanelProps = {
   onSave: () => void;
   isSaving: boolean;
   saveDisabled: boolean;
+  errors?: Partial<Record<'title' | 'eventDate' | 'startTime', string>>;
+  onFieldBlur?: (field: 'title' | 'eventDate' | 'startTime') => void;
 };
 
 
@@ -37,6 +39,8 @@ export function ProductionOverviewPanel({
   onSave,
   isSaving,
   saveDisabled,
+  errors,
+  onFieldBlur,
 }: ProductionOverviewPanelProps) {
   return (
     <section className="rounded-xl border bg-gradient-to-br from-muted/50 via-background to-background p-6 print:hidden">
@@ -52,6 +56,8 @@ export function ProductionOverviewPanel({
                 onChange={onChange}
                 showStatus
                 compact
+                errors={errors}
+                onFieldBlur={onFieldBlur}
               />
             </div>
           ) : (

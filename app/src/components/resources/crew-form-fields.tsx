@@ -2,11 +2,13 @@
 
 import {
   Field,
+  FieldError,
   FieldGroup,
   FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { InputWithCharacterCount } from '@/components/shared/character-count';
 import {
   Select,
   SelectContent,
@@ -29,12 +31,16 @@ type CrewFormFieldsProps = {
   values: CrewFormValues;
   onChange: (values: CrewFormValues) => void;
   disabled?: boolean;
+  errors?: Partial<Record<'name' | 'email' | 'phone', string>>;
+  onFieldBlur?: (field: 'name' | 'email' | 'phone') => void;
 };
 
 export function CrewFormFields({
   values,
   onChange,
   disabled = false,
+  errors,
+  onFieldBlur,
 }: CrewFormFieldsProps) {
   const roleValue = isCrewRole(values.role) ? values.role : 'CAMERAMAN';
 
@@ -42,14 +48,15 @@ export function CrewFormFields({
     <FieldGroup>
       <Field>
         <FieldLabel htmlFor="crew-name">Name</FieldLabel>
-        <Input
+        <InputWithCharacterCount
           id="crew-name"
           value={values.name}
           onChange={(e) => onChange({ ...values, name: e.target.value })}
+          onBlur={() => onFieldBlur?.('name')}
           placeholder="John Doe"
-          required
           disabled={disabled}
         />
+        {errors?.name ? <FieldError>{errors.name}</FieldError> : null}
       </Field>
       <Field>
         <FieldLabel htmlFor="crew-role">Role</FieldLabel>
@@ -76,25 +83,29 @@ export function CrewFormFields({
       </Field>
       <Field>
         <FieldLabel htmlFor="crew-email">Email</FieldLabel>
-        <Input
+        <InputWithCharacterCount
           id="crew-email"
           type="email"
           value={values.email}
           onChange={(e) => onChange({ ...values, email: e.target.value })}
+          onBlur={() => onFieldBlur?.('email')}
           placeholder="john@example.com (optional)"
           disabled={disabled}
         />
+        {errors?.email ? <FieldError>{errors.email}</FieldError> : null}
       </Field>
       <Field>
         <FieldLabel htmlFor="crew-phone">Phone</FieldLabel>
-        <Input
+        <InputWithCharacterCount
           id="crew-phone"
           type="tel"
           value={values.phone}
           onChange={(e) => onChange({ ...values, phone: e.target.value })}
+          onBlur={() => onFieldBlur?.('phone')}
           placeholder="+639123456789 (optional)"
           disabled={disabled}
         />
+        {errors?.phone ? <FieldError>{errors.phone}</FieldError> : null}
       </Field>
       <Field>
         <FieldLabel htmlFor="crew-notes">Notes</FieldLabel>
