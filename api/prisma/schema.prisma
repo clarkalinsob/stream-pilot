@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ProductionStatus {
+  DRAFT
+  SCHEDULED
+  COMPLETED
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -15,4 +21,32 @@ model User {
   lastName  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Production {
+  id          String           @id @default(cuid())
+  userId      String
+  title       String
+  description String?
+  eventDate   DateTime?
+  status      ProductionStatus @default(DRAFT)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  runSheetItems RunSheetItem[]
+
+  @@index([userId])
+}
+
+model RunSheetItem {
+  id              String @id @default(cuid())
+  productionId    String
+  sequence        Int
+  title           String
+  durationMinutes Int?
+  notes           String?
+
+  production Production @relation(fields: [productionId], references: [id], onDelete: Cascade)
+
+  @@unique([productionId, sequence])
 }
