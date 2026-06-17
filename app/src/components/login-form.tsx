@@ -38,7 +38,7 @@ export function LoginForm({
     e.preventDefault();
     try {
       await login(email, password);
-      router.push('/');
+      router.push('/dashboard');
     } catch {
       // error is set in store
     }

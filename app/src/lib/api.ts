@@ -10,29 +10,30 @@ export class ApiError extends Error {
   }
 }
 
+type ApiFetchOptions = RequestInit & {
+  /** When true, a 401 clears session and redirects to login. */
+  requireSession?: boolean;
+};
+
 export async function apiFetch<T>(
   path: string,
-  options?: RequestInit,
+  options?: ApiFetchOptions,
 ): Promise<T> {
+  const { requireSession, ...init } = options ?? {};
+
   const res = await fetch(`${apiUrl}${path}`, {
-    ...options,
+    ...init,
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      ...options?.headers,
+      ...init.headers,
     },
   });
 
   if (res.status === 401) {
-    if (typeof window !== 'undefined') {
+    if (requireSession && typeof window !== 'undefined') {
       const { useAuthStore } = await import('@/stores/auth-store');
-      useAuthStore.getState().reset();
-      if (
-        !window.location.pathname.startsWith('/login') &&
-        !window.location.pathname.startsWith('/signup')
-      ) {
-        window.location.href = '/login';
-      }
+      await useAuthStore.getState().handleSessionExpired();
     }
     throw new ApiError('Session expired', 401);
   }

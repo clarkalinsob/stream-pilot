@@ -53,7 +53,7 @@ export function SignupForm({
 
     try {
       await register({ firstName, lastName, email, password });
-      router.push('/');
+      router.push('/dashboard');
     } catch {
       // error is set in store
     }
