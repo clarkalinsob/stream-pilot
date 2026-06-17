@@ -24,23 +24,6 @@ type ProductionOverviewPanelProps = {
   saveDisabled: boolean;
 };
 
-function RunSheetStats({
-  segmentCount,
-  totalDurationMinutes,
-}: {
-  segmentCount: number;
-  totalDurationMinutes: number;
-}) {
-  return (
-    <p className="text-sm text-muted-foreground">
-      <span className="font-medium text-foreground">Run Sheet</span>
-      {' · '}
-      {segmentCount} {segmentCount === 1 ? 'segment' : 'segments'}
-      {' · '}
-      {formatDuration(totalDurationMinutes)} total runtime
-    </p>
-  );
-}
 
 export function ProductionOverviewPanel({
   values,
@@ -61,18 +44,14 @@ export function ProductionOverviewPanel({
         <div className="min-w-0 flex-1">
           {isEditing ? (
             <div className="max-w-2xl space-y-5">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                Edit production details
-              </p>
+              <h2 className="text-lg font-semibold tracking-tight">
+                Production details
+              </h2>
               <ProductionDetailsFields
                 values={values}
                 onChange={onChange}
                 showStatus
                 compact
-              />
-              <RunSheetStats
-                segmentCount={segmentCount}
-                totalDurationMinutes={totalDurationMinutes}
               />
             </div>
           ) : (

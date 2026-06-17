@@ -211,7 +211,7 @@ function ResourcesPageContent() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Resources"
-        description="Your crew roster and equipment inventory. Assign them from a production when you're ready to staff a show."
+        description="Your crew roster and equipment inventory. Assign them to a production when you're ready to staff a show."
       >
         {tab === 'crew' ? (
           <CreateButton onClick={openCrewCreate}>Add Crew Member</CreateButton>

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { FormDialog } from '@/components/shared/form-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { formatCrewRole } from '@/lib/resources';
+import { CrewRoleBadge } from '@/components/resources/crew-role-badge';
 import { EquipmentCategoryBadge } from '@/components/resources/equipment-category-badge';
 import { listCrew } from '@/lib/crew';
 import { listEquipment } from '@/lib/equipment';
@@ -103,36 +103,37 @@ export function AssignmentPickerDialog({
   return (
     <FormDialog
       open={open}
-      title="Assign resources"
+      title="Assign Resources"
       description="Select crew and equipment from your inventory."
       onOpenChange={onOpenChange}
       onSubmit={handleSubmit}
-      submitLabel="Save assignments"
+      submitLabel="Save Assignments"
       isLoading={isSaving || isLoading}
       submitDisabled={isLoading}
       contentClassName="sm:max-w-lg"
     >
-      <div className="space-y-4">
+      <div className="space-y-3">
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search…"
           disabled={isLoading}
+          className="h-8 text-sm"
         />
 
         <Tabs defaultValue="crew">
-          <TabsList className="w-full">
-            <TabsTrigger value="crew" className="flex-1">
+          <TabsList className="h-8 w-full">
+            <TabsTrigger value="crew" className="flex-1 text-xs">
               Crew ({selectedCrewIds.length})
             </TabsTrigger>
-            <TabsTrigger value="equipment" className="flex-1">
+            <TabsTrigger value="equipment" className="flex-1 text-xs">
               Equipment ({selectedEquipment.length})
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="crew" className="mt-3 max-h-64 space-y-2 overflow-y-auto">
+          <TabsContent value="crew" className="mt-2 max-h-64 space-y-1 overflow-y-auto">
             {filteredCrew.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {isLoading ? 'Loading…' : 'No crew members found.'}
               </p>
             ) : (
@@ -145,21 +146,19 @@ export function AssignmentPickerDialog({
                     disabled={isSaving}
                     onClick={() => toggleCrew(member.id)}
                     className={cn(
-                      'flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left transition-colors',
+                      'flex w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-sm transition-colors',
                       selected
                         ? 'border-primary bg-primary/5'
                         : 'hover:bg-muted/50',
                     )}
                   >
-                    <div>
-                      <p className="font-medium">{member.name}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {formatCrewRole(member.role)}
-                      </p>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {selected ? 'Selected' : 'Tap to select'}
-                    </span>
+                    <span className="min-w-0 flex-1 truncate">{member.name}</span>
+                    <CrewRoleBadge role={member.role} size="sm" />
+                    {selected ? (
+                      <span className="shrink-0 text-[10px] text-muted-foreground">
+                        Selected
+                      </span>
+                    ) : null}
                   </button>
                 );
               })
@@ -168,10 +167,10 @@ export function AssignmentPickerDialog({
 
           <TabsContent
             value="equipment"
-            className="mt-3 max-h-64 space-y-2 overflow-y-auto"
+            className="mt-2 max-h-64 space-y-1 overflow-y-auto"
           >
             {filteredEquipment.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {isLoading ? 'Loading…' : 'No equipment found.'}
               </p>
             ) : (
@@ -184,23 +183,19 @@ export function AssignmentPickerDialog({
                     disabled={isSaving}
                     onClick={() => toggleEquipment(item.id)}
                     className={cn(
-                      'flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left transition-colors',
+                      'flex w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-sm transition-colors',
                       selected
                         ? 'border-primary bg-primary/5'
                         : 'hover:bg-muted/50',
                     )}
                   >
-                    <div>
-                      <p className="font-medium">{item.name}</p>
-                      <EquipmentCategoryBadge
-                        category={item.category}
-                        size="sm"
-                        className="mt-1"
-                      />
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {selected ? 'Selected' : 'Tap to select'}
-                    </span>
+                    <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                    <EquipmentCategoryBadge category={item.category} size="sm" />
+                    {selected ? (
+                      <span className="shrink-0 text-[10px] text-muted-foreground">
+                        Selected
+                      </span>
+                    ) : null}
                   </button>
                 );
               })

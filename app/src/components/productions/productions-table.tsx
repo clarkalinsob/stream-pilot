@@ -26,9 +26,7 @@ export function createProductionColumns(actions: {
     {
       accessorKey: 'title',
       header: 'Title',
-      cell: ({ row }) => (
-        <span className="font-medium">{row.original.title}</span>
-      ),
+      cell: ({ row }) => row.original.title,
     },
     {
       accessorKey: 'eventDate',

@@ -37,7 +37,7 @@ export function ProductionStatusBadge({
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center rounded-full border font-semibold uppercase tracking-wide',
+        'inline-flex shrink-0 items-center rounded-full border font-medium',
         size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1 text-xs',
         config.className,
         className,
