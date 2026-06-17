@@ -102,3 +102,29 @@
     @apply bg-background text-foreground antialiased;
   }
 }
+
+@media print {
+  @page {
+    margin: 1.25cm;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  [data-slot='sidebar-inset'] {
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    min-height: auto !important;
+    width: 100% !important;
+  }
+
+  .run-sheet-document {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border: none !important;
+    background: white !important;
+  }
+}

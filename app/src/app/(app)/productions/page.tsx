@@ -1,10 +1,121 @@
+'use client';
+
+import { Suspense, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Clapperboard, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
+import { EmptyState } from '@/components/shared/empty-state';
+import { ErrorAlert } from '@/components/shared/error-alert';
+import { PageHeader } from '@/components/shared/page-header';
+import { PaginatedFooter } from '@/components/shared/paginated-footer';
+import { ProductionsTable } from '@/components/productions/productions-table';
+import { usePagination } from '@/hooks/use-pagination';
+import { useProductionsStore } from '@/stores/productions-store';
+import type { ProductionSummary } from '@/types/production';
+
 export default function ProductionsPage() {
   return (
-    <div>
-      <h1 className="text-2xl font-semibold tracking-tight">Productions</h1>
-      <p className="mt-2 text-muted-foreground">
-        Manage your livestream productions here.
-      </p>
+    <Suspense fallback={<div className="text-muted-foreground">Loading…</div>}>
+      <ProductionsPageContent />
+    </Suspense>
+  );
+}
+
+function ProductionsPageContent() {
+  const router = useRouter();
+  const { page, setPage, limit } = usePagination();
+  const {
+    productions,
+    pagination,
+    isLoading,
+    isSaving,
+    error,
+    fetchProductions,
+    deleteProduction,
+    clearError,
+  } = useProductionsStore();
+
+  const [deleteTarget, setDeleteTarget] = useState<ProductionSummary | null>(
+    null,
+  );
+
+  useEffect(() => {
+    fetchProductions({ page, limit });
+  }, [fetchProductions, page, limit]);
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    const nextPage = await deleteProduction(deleteTarget.id, page);
+    setDeleteTarget(null);
+    if (nextPage !== page) setPage(nextPage);
+  }
+
+  const isEmpty = !isLoading && pagination?.total === 0;
+
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Productions"
+        description="Plan your livestream shows and run-of-show segments."
+      >
+        <Button asChild>
+          <Link href="/productions/new">
+            <Plus />
+            New Production
+          </Link>
+        </Button>
+      </PageHeader>
+
+      <ErrorAlert message={error ?? ''} onDismiss={clearError} />
+
+      {isEmpty ? (
+        <EmptyState
+          icon={Clapperboard}
+          title="No productions yet"
+          description="Create your first production with a run sheet to get started."
+          action={
+            <Button asChild>
+              <Link href="/productions/new">
+                <Plus />
+                New production
+              </Link>
+            </Button>
+          }
+        />
+      ) : (
+        <>
+          <ProductionsTable
+            data={productions}
+            isLoading={isLoading}
+            onRowClick={(id) => router.push(`/productions/${id}`)}
+            onDelete={setDeleteTarget}
+          />
+          {pagination && (
+            <PaginatedFooter
+              meta={pagination}
+              onPageChange={setPage}
+              itemLabel="productions"
+            />
+          )}
+        </>
+      )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete Production?"
+        description={
+          deleteTarget
+            ? `This will permanently delete "${deleteTarget.title}" and its run sheet.`
+            : ''
+        }
+        confirmLabel="Delete"
+        variant="destructive"
+        isLoading={isSaving}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
