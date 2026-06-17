@@ -13,6 +13,29 @@ enum ProductionStatus {
   COMPLETED
 }
 
+enum CrewRole {
+  CAMERA
+  AUDIO
+  DIRECTOR
+  TALENT
+  VIDEO
+  EDITOR
+  PRODUCER
+  FLOOR
+  OTHER
+}
+
+enum EquipmentCategory {
+  CAMERA
+  AUDIO
+  LIGHTING
+  ELECTRICAL
+  VIDEO
+  LAPTOP
+  PC
+  OTHER
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -35,7 +58,9 @@ model Production {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
-  runSheetItems RunSheetItem[]
+  runSheetItems        RunSheetItem[]
+  crewAssignments      ProductionCrewAssignment[]
+  equipmentAssignments ProductionEquipmentAssignment[]
 
   @@index([userId])
 }
@@ -51,4 +76,55 @@ model RunSheetItem {
   production Production @relation(fields: [productionId], references: [id], onDelete: Cascade)
 
   @@unique([productionId, sequence])
+}
+
+model CrewMember {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  role      CrewRole
+  contact   String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignments ProductionCrewAssignment[]
+
+  @@index([userId])
+}
+
+model Equipment {
+  id        String            @id @default(cuid())
+  userId    String
+  name      String
+  category  EquipmentCategory
+  quantity  Int               @default(1)
+  notes     String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  assignments ProductionEquipmentAssignment[]
+
+  @@index([userId])
+}
+
+model ProductionCrewAssignment {
+  productionId String
+  crewMemberId String
+
+  production Production @relation(fields: [productionId], references: [id], onDelete: Cascade)
+  crewMember CrewMember @relation(fields: [crewMemberId], references: [id], onDelete: Cascade)
+
+  @@id([productionId, crewMemberId])
+}
+
+model ProductionEquipmentAssignment {
+  productionId String
+  equipmentId  String
+  quantity     Int        @default(1)
+
+  production Production @relation(fields: [productionId], references: [id], onDelete: Cascade)
+  equipment  Equipment  @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@id([productionId, equipmentId])
 }

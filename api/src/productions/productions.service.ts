@@ -3,6 +3,7 @@ import { Prisma, Production } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductionDto } from './dto/create-production.dto';
 import { ListProductionsQueryDto } from './dto/list-productions-query.dto';
+import { ReplaceAssignmentsDto } from './dto/replace-assignments.dto';
 import { ReplaceRunSheetDto } from './dto/replace-run-sheet.dto';
 import { UpdateProductionDto } from './dto/update-production.dto';
 import {
@@ -15,6 +16,7 @@ import {
 import {
   PaginatedProductionsResponse,
   ProductionDetail,
+  productionDetailInclude,
   toProductionDetail,
   toProductionSummary,
 } from './productions.types';
@@ -64,9 +66,7 @@ export class ProductionsService {
   async findOne(userId: string, id: string): Promise<ProductionDetail> {
     const production = await this.prisma.production.findFirst({
       where: { id, userId },
-      include: {
-        runSheetItems: { orderBy: { sequence: 'asc' } },
-      },
+      include: productionDetailInclude,
     });
 
     if (!production) {
@@ -99,9 +99,7 @@ export class ProductionsService {
             })),
           },
         },
-        include: {
-          runSheetItems: { orderBy: { sequence: 'asc' } },
-        },
+        include: productionDetailInclude,
       });
     });
 
@@ -135,9 +133,7 @@ export class ProductionsService {
 
       return tx.production.findUniqueOrThrow({
         where: { id },
-        include: {
-          runSheetItems: { orderBy: { sequence: 'asc' } },
-        },
+        include: productionDetailInclude,
       });
     });
 
@@ -168,9 +164,72 @@ export class ProductionsService {
 
       return tx.production.findUniqueOrThrow({
         where: { id },
-        include: {
-          runSheetItems: { orderBy: { sequence: 'asc' } },
-        },
+        include: productionDetailInclude,
+      });
+    });
+
+    return toProductionDetail(production);
+  }
+
+  async replaceAssignments(
+    userId: string,
+    id: string,
+    dto: ReplaceAssignmentsDto,
+  ): Promise<ProductionDetail> {
+    await this.findOwnedOrThrow(userId, id);
+
+    const uniqueCrewIds = [...new Set(dto.crewMemberIds)];
+    const equipmentById = new Map(
+      dto.equipment.map((item) => [item.equipmentId, item.quantity ?? 1]),
+    );
+    const uniqueEquipmentIds = [...equipmentById.keys()];
+
+    if (uniqueCrewIds.length > 0) {
+      const crewCount = await this.prisma.crewMember.count({
+        where: { userId, id: { in: uniqueCrewIds } },
+      });
+
+      if (crewCount !== uniqueCrewIds.length) {
+        throw new NotFoundException('One or more crew members not found');
+      }
+    }
+
+    if (uniqueEquipmentIds.length > 0) {
+      const equipmentCount = await this.prisma.equipment.count({
+        where: { userId, id: { in: uniqueEquipmentIds } },
+      });
+
+      if (equipmentCount !== uniqueEquipmentIds.length) {
+        throw new NotFoundException('One or more equipment items not found');
+      }
+    }
+
+    const production = await this.prisma.$transaction(async (tx) => {
+      await tx.productionCrewAssignment.deleteMany({ where: { productionId: id } });
+      await tx.productionEquipmentAssignment.deleteMany({ where: { productionId: id } });
+
+      if (uniqueCrewIds.length > 0) {
+        await tx.productionCrewAssignment.createMany({
+          data: uniqueCrewIds.map((crewMemberId) => ({
+            productionId: id,
+            crewMemberId,
+          })),
+        });
+      }
+
+      if (dto.equipment.length > 0) {
+        await tx.productionEquipmentAssignment.createMany({
+          data: uniqueEquipmentIds.map((equipmentId) => ({
+            productionId: id,
+            equipmentId,
+            quantity: equipmentById.get(equipmentId) ?? 1,
+          })),
+        });
+      }
+
+      return tx.production.findUniqueOrThrow({
+        where: { id },
+        include: productionDetailInclude,
       });
     });
 

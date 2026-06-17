@@ -14,6 +14,7 @@ import { UserResponse } from '../auth/auth.types';
 import { CreateProductionDto } from './dto/create-production.dto';
 import { ListProductionsQueryDto } from './dto/list-productions-query.dto';
 import { ReplaceRunSheetDto } from './dto/replace-run-sheet.dto';
+import { ReplaceAssignmentsDto } from './dto/replace-assignments.dto';
 import { UpdateProductionDto } from './dto/update-production.dto';
 import { ProductionsService } from './productions.service';
 
@@ -55,6 +56,15 @@ export class ProductionsController {
     @Body() dto: ReplaceRunSheetDto,
   ) {
     return this.productionsService.replaceRunSheet(user.id, id, dto);
+  }
+
+  @Put(':id/assignments')
+  replaceAssignments(
+    @CurrentUser() user: UserResponse,
+    @Param('id') id: string,
+    @Body() dto: ReplaceAssignmentsDto,
+  ) {
+    return this.productionsService.replaceAssignments(user.id, id, dto);
   }
 
   @Delete(':id')

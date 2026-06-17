@@ -1,4 +1,10 @@
-import { Production, ProductionStatus, RunSheetItem } from '@prisma/client';
+import {
+  CrewRole,
+  EquipmentCategory,
+  Production,
+  ProductionStatus,
+  RunSheetItem,
+} from '@prisma/client';
 import { toDateString, toTimeString } from './event-schedule';
 
 export type RunSheetItemResponse = {
@@ -7,6 +13,20 @@ export type RunSheetItemResponse = {
   title: string;
   durationMinutes: number | null;
   notes: string | null;
+};
+
+export type CrewAssignmentResponse = {
+  crewMemberId: string;
+  name: string;
+  role: CrewRole;
+  contact: string | null;
+};
+
+export type EquipmentAssignmentResponse = {
+  equipmentId: string;
+  name: string;
+  category: EquipmentCategory;
+  quantity: number;
 };
 
 export type ProductionSummary = {
@@ -23,6 +43,8 @@ export type ProductionSummary = {
 export type ProductionDetail = ProductionSummary & {
   description: string | null;
   runSheetItems: RunSheetItemResponse[];
+  crewAssignments: CrewAssignmentResponse[];
+  equipmentAssignments: EquipmentAssignmentResponse[];
   createdAt: string;
   updatedAt: string;
 };
@@ -41,11 +63,45 @@ export type PaginatedProductionsResponse = {
 
 type ProductionWithItems = Production & {
   runSheetItems: RunSheetItem[];
+  crewAssignments: {
+    crewMember: {
+      id: string;
+      name: string;
+      role: CrewRole;
+      contact: string | null;
+    };
+  }[];
+  equipmentAssignments: {
+    quantity: number;
+    equipment: {
+      id: string;
+      name: string;
+      category: EquipmentCategory;
+    };
+  }[];
 };
 
 type ProductionWithCount = Production & {
   _count: { runSheetItems: number };
   runSheetItems: { durationMinutes: number | null }[];
+};
+
+export const productionDetailInclude = {
+  runSheetItems: { orderBy: { sequence: 'asc' as const } },
+  crewAssignments: {
+    include: {
+      crewMember: {
+        select: { id: true, name: true, role: true, contact: true },
+      },
+    },
+  },
+  equipmentAssignments: {
+    include: {
+      equipment: {
+        select: { id: true, name: true, category: true },
+      },
+    },
+  },
 };
 
 export function toRunSheetItemResponse(item: RunSheetItem): RunSheetItemResponse {
@@ -68,6 +124,28 @@ function toScheduleFields(production: Production) {
     startTime: toTimeString(production.startTime),
     endTime: toTimeString(production.endTime),
   };
+}
+
+function toCrewAssignments(
+  assignments: ProductionWithItems['crewAssignments'],
+): CrewAssignmentResponse[] {
+  return assignments.map((assignment) => ({
+    crewMemberId: assignment.crewMember.id,
+    name: assignment.crewMember.name,
+    role: assignment.crewMember.role,
+    contact: assignment.crewMember.contact,
+  }));
+}
+
+function toEquipmentAssignments(
+  assignments: ProductionWithItems['equipmentAssignments'],
+): EquipmentAssignmentResponse[] {
+  return assignments.map((assignment) => ({
+    equipmentId: assignment.equipment.id,
+    name: assignment.equipment.name,
+    category: assignment.equipment.category,
+    quantity: assignment.quantity,
+  }));
 }
 
 export function toProductionSummary(production: ProductionWithCount): ProductionSummary {
@@ -93,6 +171,8 @@ export function toProductionDetail(production: ProductionWithItems): ProductionD
     segmentCount: items.length,
     totalDurationMinutes: sumDurationMinutes(production.runSheetItems),
     runSheetItems: items,
+    crewAssignments: toCrewAssignments(production.crewAssignments),
+    equipmentAssignments: toEquipmentAssignments(production.equipmentAssignments),
     createdAt: production.createdAt.toISOString(),
     updatedAt: production.updatedAt.toISOString(),
   };
