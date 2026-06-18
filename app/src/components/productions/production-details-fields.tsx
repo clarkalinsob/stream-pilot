@@ -41,7 +41,6 @@ export function ProductionDetailsFields({
   values,
   onChange,
   showStatus = false,
-  requireSchedule = false,
   disabled = false,
   compact = false,
   errors,

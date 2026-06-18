@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { HeaderNotifications } from '@/components/header-notifications';
+import { ThemeToggle } from '@/components/theme-toggle';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -61,6 +62,7 @@ export function AppHeader() {
         </Breadcrumb>
       </div>
       <div className="flex shrink-0 items-center gap-1">
+        <ThemeToggle />
         <HeaderNotifications />
       </div>
     </header>

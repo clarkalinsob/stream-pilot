@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -79,7 +79,7 @@ function ProductionDetailContent() {
     return () => clearCurrent();
   }, [id, fetchProduction, clearCurrent]);
 
-  function syncFromCurrent() {
+  const syncFromCurrent = useCallback(() => {
     if (!current) return;
     setDetails({
       title: current.title,
@@ -95,13 +95,13 @@ function ProductionDetailContent() {
     setShowDetailErrors(false);
     setSegmentTouched({});
     setShowSegmentErrors(false);
-  }
+  }, [current]);
 
   useEffect(() => {
     syncFromCurrent();
     setIsEditingOverview(false);
     setIsEditingRunSheet(false);
-  }, [current]);
+  }, [syncFromCurrent]);
 
   function handleDetailsChange(values: ProductionDetailsValues) {
     setDetails(values);
