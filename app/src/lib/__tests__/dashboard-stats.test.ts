@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatKpiValue,
+  hasAnyResources,
   hasResourceGaps,
   statusBreakdown,
   totalUnassignedResources,
@@ -36,6 +37,22 @@ describe('statusBreakdown', () => {
     );
 
     expect(result.every((item) => item.percentage === 0)).toBe(true);
+  });
+});
+
+describe('hasAnyResources', () => {
+  it('returns false when crew and equipment totals are zero', () => {
+    expect(
+      hasAnyResources(
+        { total: 0 },
+        { total: 0 },
+      ),
+    ).toBe(false);
+  });
+
+  it('returns true when crew or equipment exists', () => {
+    expect(hasAnyResources({ total: 1 }, { total: 0 })).toBe(true);
+    expect(hasAnyResources({ total: 0 }, { total: 1 })).toBe(true);
   });
 });
 

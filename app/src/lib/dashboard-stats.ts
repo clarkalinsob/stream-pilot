@@ -27,6 +27,13 @@ export function hasResourceGaps(stats: DashboardStats): boolean {
   return hasUnassignedResources(stats.crew, stats.equipment);
 }
 
+export function hasAnyResources(
+  crew: { total: number },
+  equipment: { total: number },
+): boolean {
+  return crew.total > 0 || equipment.total > 0;
+}
+
 export function hasUnassignedResources(
   crew: { unassigned: number },
   equipment: { unassigned: number },

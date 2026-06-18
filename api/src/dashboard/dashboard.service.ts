@@ -59,7 +59,7 @@ export class DashboardService {
           { eventDate: { sort: 'asc', nulls: 'last' } },
           { startTime: { sort: 'asc', nulls: 'last' } },
         ],
-        take: 5,
+        take: 4,
       }),
       this.prisma.runSheetItem.aggregate({
         where: { production: { userId } },

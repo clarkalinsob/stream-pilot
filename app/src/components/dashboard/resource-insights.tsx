@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { AlertTriangle, CheckCircle2, Users } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Package, Users } from 'lucide-react';
 import type { DashboardStats } from '@/types/dashboard';
-import { hasUnassignedResources } from '@/lib/dashboard-stats';
+import { hasAnyResources, hasUnassignedResources } from '@/lib/dashboard-stats';
 import { CrewRoleBadge } from '@/components/resources/crew-role-badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,6 +19,7 @@ type ResourceInsightsProps = {
 };
 
 export function ResourceInsights({ stats, isLoading }: ResourceInsightsProps) {
+  const hasResources = hasAnyResources(stats.crew, stats.equipment);
   const gaps = hasUnassignedResources(stats.crew, stats.equipment);
 
   return (
@@ -37,18 +38,30 @@ export function ResourceInsights({ stats, isLoading }: ResourceInsightsProps) {
             <div
               className={cn(
                 'flex gap-3 rounded-lg border p-4',
-                gaps
-                  ? 'border-amber-200 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-950/40'
-                  : 'border-emerald-200 bg-emerald-50 dark:border-emerald-800/50 dark:bg-emerald-950/40',
+                !hasResources
+                  ? 'border-border bg-muted/40'
+                  : gaps
+                    ? 'border-amber-200 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-950/40'
+                    : 'border-emerald-200 bg-emerald-50 dark:border-emerald-800/50 dark:bg-emerald-950/40',
               )}
             >
-              {gaps ? (
+              {!hasResources ? (
+                <Package className="size-5 shrink-0 text-muted-foreground" />
+              ) : gaps ? (
                 <AlertTriangle className="size-5 shrink-0 text-amber-600 dark:text-amber-400" />
               ) : (
                 <CheckCircle2 className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
               )}
               <div className="space-y-1 text-sm">
-                {gaps ? (
+                {!hasResources ? (
+                  <>
+                    <p className="font-medium">No resources yet</p>
+                    <p className="text-muted-foreground">
+                      Add crew members and equipment to track assignments across
+                      productions.
+                    </p>
+                  </>
+                ) : gaps ? (
                   <>
                     <p className="font-medium text-amber-900 dark:text-amber-100">
                       Resources need assignment

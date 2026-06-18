@@ -94,7 +94,7 @@ describe('DashboardService', () => {
           userId,
           status: { not: ProductionStatus.COMPLETED },
         }),
-        take: 5,
+        take: 4,
       }),
     );
     expect(result.productions.total).toBe(6);

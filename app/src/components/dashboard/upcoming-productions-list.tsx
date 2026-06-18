@@ -22,22 +22,34 @@ export function UpcomingProductionsList({
   productions,
   isLoading,
 }: UpcomingProductionsListProps) {
+  const visibleProductions = productions.slice(0, 4);
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-base">Upcoming Productions</CardTitle>
+        {!isLoading ? (
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="h-auto px-2 py-1 text-xs"
+          >
+            <Link href="/productions">View all</Link>
+          </Button>
+        ) : null}
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <div className="space-y-4">
-            {[1, 2, 3].map((key) => (
+            {[1, 2, 3, 4].map((key) => (
               <div key={key} className="space-y-2">
                 <Skeleton className="h-5 w-3/4" />
                 <Skeleton className="h-4 w-full" />
               </div>
             ))}
           </div>
-        ) : productions.length === 0 ? (
+        ) : visibleProductions.length === 0 ? (
           <EmptyState
             icon={Clapperboard}
             title="No upcoming productions"
@@ -51,7 +63,7 @@ export function UpcomingProductionsList({
           />
         ) : (
           <ul className="divide-y">
-            {productions.map((production) => (
+            {visibleProductions.map((production) => (
               <li key={production.id} className="py-4 first:pt-0 last:pb-0">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <Link
