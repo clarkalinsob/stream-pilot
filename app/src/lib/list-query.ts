@@ -5,6 +5,7 @@ export type ListQueryParams = {
   limit?: number;
   sort?: string;
   order?: SortOrder;
+  search?: string;
 };
 
 export function buildListQueryString({
@@ -12,11 +13,16 @@ export function buildListQueryString({
   limit = 10,
   sort,
   order,
+  search,
 }: ListQueryParams = {}): string {
   const params = new URLSearchParams({
     page: String(page),
     limit: String(limit),
   });
+
+  if (search?.trim()) {
+    params.set('search', search.trim());
+  }
 
   if (sort) {
     params.set('sort', sort);

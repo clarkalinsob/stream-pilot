@@ -11,6 +11,12 @@ describe('buildListQueryString', () => {
       buildListQueryString({ page: 1, limit: 10, sort: 'name', order: 'desc' }),
     ).toBe('page=1&limit=10&sort=name&order=desc');
   });
+
+  it('includes search when provided', () => {
+    expect(
+      buildListQueryString({ page: 1, limit: 10, search: ' morning ' }),
+    ).toBe('page=1&limit=10&search=morning');
+  });
 });
 
 describe('getEffectiveSort', () => {

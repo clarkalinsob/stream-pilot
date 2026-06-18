@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorAlert } from '@/components/shared/error-alert';
 import { PageHeader } from '@/components/shared/page-header';
 import { PaginatedFooter } from '@/components/shared/paginated-footer';
+import { ListSearchField } from '@/components/shared/list-search-field';
 import { CrewFormDialog } from '@/components/resources/crew-form-dialog';
 import type { CrewFormValues } from '@/components/resources/crew-form-fields';
 import { CrewTable } from '@/components/resources/crew-table';
@@ -45,6 +46,10 @@ function ResourcesPageContent() {
     defaultOrder,
     setSort,
     clearSort,
+    search,
+    inputValue,
+    setInputValue,
+    clearSearch,
   } = useListQuery({ defaultSort: 'name', defaultOrder: 'asc' });
   const [tab, setTab] = useState<ResourceTab>('crew');
 
@@ -130,6 +135,7 @@ function ResourcesPageContent() {
     setTab(value as ResourceTab);
     setPage(1);
     clearSort();
+    clearSearch();
   }
 
   async function openCrewEdit(member: CrewMemberSummary) {
@@ -224,8 +230,8 @@ function ResourcesPageContent() {
   const clearActiveError = tab === 'crew' ? clearCrewError : clearEquipmentError;
   const isEmpty =
     tab === 'crew'
-      ? !crewLoading && crewTotal === 0
-      : !equipmentLoading && equipmentTotal === 0;
+      ? !crewLoading && crewTotal === 0 && !search
+      : !equipmentLoading && equipmentTotal === 0 && !search;
 
   return (
     <div className="flex flex-col gap-6">
@@ -266,6 +272,13 @@ function ResourcesPageContent() {
             />
           ) : (
             <>
+              <ListSearchField
+                value={inputValue}
+                onChange={setInputValue}
+                onClear={clearSearch}
+                placeholder="Search crew…"
+                disabled={crewLoading}
+              />
               <CrewTable
                 data={crew}
                 isLoading={crewLoading}
@@ -299,6 +312,13 @@ function ResourcesPageContent() {
             />
           ) : (
             <>
+              <ListSearchField
+                value={inputValue}
+                onChange={setInputValue}
+                onClear={clearSearch}
+                placeholder="Search equipment…"
+                disabled={equipmentLoading}
+              />
               <EquipmentTable
                 data={equipment}
                 isLoading={equipmentLoading}

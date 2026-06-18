@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorAlert } from '@/components/shared/error-alert';
 import { PageHeader } from '@/components/shared/page-header';
 import { PaginatedFooter } from '@/components/shared/paginated-footer';
+import { ListSearchField } from '@/components/shared/list-search-field';
 import { ProductionsTable } from '@/components/productions/productions-table';
 import { useListQuery } from '@/hooks/use-list-query';
 import { useProductionsStore } from '@/stores/productions-store';
@@ -27,8 +28,19 @@ export default function ProductionsPage() {
 
 function ProductionsPageContent() {
   const router = useRouter();
-  const { queryParams, setPage, sort, order, defaultSort, defaultOrder, setSort } =
-    useListQuery({ defaultSort: 'eventDate', defaultOrder: 'desc' });
+  const {
+    queryParams,
+    setPage,
+    sort,
+    order,
+    defaultSort,
+    defaultOrder,
+    setSort,
+    search,
+    inputValue,
+    setInputValue,
+    clearSearch,
+  } = useListQuery({ defaultSort: 'eventDate', defaultOrder: 'desc' });
   const {
     productions,
     pagination,
@@ -75,7 +87,7 @@ function ProductionsPageContent() {
     }
   }
 
-  const isEmpty = !isLoading && pagination?.total === 0;
+  const showInitialEmpty = !isLoading && !search && (pagination?.total ?? 0) === 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -88,7 +100,7 @@ function ProductionsPageContent() {
 
       <ErrorAlert message={error ?? ''} onDismiss={clearError} />
 
-      {isEmpty ? (
+      {showInitialEmpty ? (
         <EmptyState
           icon={Clapperboard}
           title="No productions yet"
@@ -99,6 +111,13 @@ function ProductionsPageContent() {
         />
       ) : (
         <>
+          <ListSearchField
+            value={inputValue}
+            onChange={setInputValue}
+            onClear={clearSearch}
+            placeholder="Search productions…"
+            disabled={isLoading}
+          />
           <ProductionsTable
             data={productions}
             isLoading={isLoading}
