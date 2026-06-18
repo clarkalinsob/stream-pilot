@@ -18,6 +18,7 @@ import {
   useNotificationCount,
 } from '@/hooks/use-notification-count';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import {
   fetchNotifications,
   markNotificationRead,
@@ -113,30 +114,36 @@ export function HeaderNotifications() {
     }
   }, [open, loadRecent, refreshPushState]);
 
-  async function handleNotificationClick(notification: NotificationItem) {
-    if (!notification.read) {
-      try {
-        await markNotificationRead(notification.id);
-        setNotifications((prev) =>
-          prev.map((item) =>
-            item.id === notification.id ? { ...item, read: true } : item,
-          ),
-        );
-        requestNotificationCountRefresh();
-      } catch {
-        // keep navigation even if mark-read fails
+  const notificationClickImpl = useCallback(
+    async (notification: NotificationItem) => {
+      if (!notification.read) {
+        try {
+          await markNotificationRead(notification.id);
+          setNotifications((prev) =>
+            prev.map((item) =>
+              item.id === notification.id ? { ...item, read: true } : item,
+            ),
+          );
+          requestNotificationCountRefresh();
+        } catch {
+          // keep navigation even if mark-read fails
+        }
       }
-    }
 
-    setOpen(false);
+      setOpen(false);
 
-    if (notification.productionId) {
-      router.push(`/productions/${notification.productionId}`);
-      return;
-    }
+      if (notification.productionId) {
+        router.push(`/productions/${notification.productionId}`);
+        return;
+      }
 
-    router.push('/notifications');
-  }
+      router.push('/notifications');
+    },
+    [router],
+  );
+
+  const { run: handleNotificationClick, isPending: isHandlingNotification } =
+    useSingleFlight(notificationClickImpl);
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -172,6 +179,7 @@ export function HeaderNotifications() {
                 'flex cursor-pointer flex-col items-start gap-0.5 py-2',
                 !notification.read && 'bg-muted/40',
               )}
+              disabled={isHandlingNotification}
               onClick={() => void handleNotificationClick(notification)}
             >
               <div className="flex w-full items-start justify-between gap-2">

@@ -411,6 +411,7 @@ export function RunSheetView({
                   {onSave && (
                     <Button
                       size="sm"
+                      loading={isSaving}
                       disabled={isSaving || saveDisabled}
                       onClick={onSave}
                     >

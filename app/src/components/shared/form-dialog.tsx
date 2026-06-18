@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import { cn } from '@/lib/utils';
 
 type FormDialogProps = {
@@ -38,6 +39,9 @@ export function FormDialog({
   contentClassName,
   children,
 }: FormDialogProps) {
+  const { run: runSubmit, isPending } = useSingleFlight(onSubmit);
+  const isBusy = isPending || isLoading;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn('sm:max-w-md', contentClassName)}>
@@ -54,17 +58,18 @@ export function FormDialog({
           <Button
             type="button"
             variant="outline"
-            disabled={isLoading}
+            disabled={isBusy}
             onClick={() => onOpenChange(false)}
           >
             {cancelLabel}
           </Button>
           <Button
             type="button"
-            disabled={isLoading || submitDisabled}
-            onClick={() => void onSubmit()}
+            loading={isBusy}
+            disabled={isBusy || submitDisabled}
+            onClick={() => void runSubmit()}
           >
-            {isLoading ? 'Saving…' : submitLabel}
+            {isBusy ? 'Saving…' : submitLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

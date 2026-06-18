@@ -1,10 +1,14 @@
+'use client';
+
+import { useCallback } from 'react';
 import { Button } from '@/components/ui/button';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import { cn } from '@/lib/utils';
 
 type FormActionsProps = {
   onBack?: () => void;
   onCancel?: () => void;
-  onSubmit?: () => void;
+  onSubmit?: () => void | Promise<void>;
   submitLabel?: string;
   backLabel?: string;
   cancelLabel?: string;
@@ -26,6 +30,12 @@ export function FormActions({
   submitType = 'submit',
   className,
 }: FormActionsProps) {
+  const submitHandler = useCallback(async () => {
+    if (onSubmit) await onSubmit();
+  }, [onSubmit]);
+
+  const { run: runSubmit, isPending } = useSingleFlight(submitHandler);
+  const isBusy = isPending || isLoading;
   const hasLeadingAction = Boolean(onCancel || onBack);
 
   return (
@@ -38,12 +48,12 @@ export function FormActions({
     >
       <div className="flex flex-col-reverse gap-2 sm:flex-row">
         {onCancel && (
-          <Button type="button" variant="ghost" onClick={onCancel}>
+          <Button type="button" variant="ghost" disabled={isBusy} onClick={onCancel}>
             {cancelLabel}
           </Button>
         )}
         {onBack && (
-          <Button type="button" variant="outline" onClick={onBack}>
+          <Button type="button" variant="outline" disabled={isBusy} onClick={onBack}>
             {backLabel}
           </Button>
         )}
@@ -51,10 +61,13 @@ export function FormActions({
       {onSubmit !== undefined && (
         <Button
           type={submitType}
-          disabled={isLoading || submitDisabled}
-          onClick={submitType === 'button' ? onSubmit : undefined}
+          loading={isBusy}
+          disabled={isBusy || submitDisabled}
+          onClick={
+            submitType === 'button' ? () => void runSubmit() : undefined
+          }
         >
-          {isLoading ? 'Saving…' : submitLabel}
+          {isBusy ? 'Saving…' : submitLabel}
         </Button>
       )}
     </div>

@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useCallback, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import {
   Card,
   CardContent,
@@ -34,11 +35,18 @@ export function LoginForm({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const submitLogin = useCallback(async () => {
+    await login(email, password);
+    router.push('/dashboard');
+  }, [email, login, password, router]);
+
+  const { run: runSubmit, isPending } = useSingleFlight(submitLogin);
+  const isBusy = isPending || isLoading;
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     try {
-      await login(email, password);
-      router.push('/dashboard');
+      await runSubmit();
     } catch {
       // error is set in store
     }
@@ -85,8 +93,8 @@ export function LoginForm({
                 />
               </Field>
               <Field>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Signing in…' : 'Login'}
+                <Button type="submit" className="w-full" loading={isBusy} disabled={isBusy}>
+                  {isBusy ? 'Signing in…' : 'Login'}
                 </Button>
                 <FieldDescription className="text-center">
                   Don&apos;t have an account?{' '}

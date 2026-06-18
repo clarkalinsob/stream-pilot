@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import * as equipmentApi from '@/lib/equipment';
 import { ApiError } from '@/lib/api';
+import { singleFlight } from '@/lib/single-flight';
 import type {
   CreateEquipmentData,
   EquipmentDetail,
@@ -34,7 +35,75 @@ type EquipmentState = {
 
 let equipmentListRequestId = 0;
 
-export const useEquipmentStore = create<EquipmentState>((set, get) => ({
+export const useEquipmentStore = create<EquipmentState>((set, get) => {
+  const createEquipment = singleFlight(async (data: CreateEquipmentData) => {
+    set({ isSaving: true, error: null });
+    try {
+      const created = await equipmentApi.createEquipment(data);
+      const { pagination } = get();
+      await get().fetchEquipment({ page: 1, limit: pagination?.limit ?? 10 });
+      set({ isSaving: false });
+      return created;
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : 'Failed to create equipment';
+      set({ isSaving: false, error: message });
+      throw err;
+    }
+  });
+
+  const updateEquipment = singleFlight(
+    async (id: string, data: UpdateEquipmentData) => {
+      set({ isSaving: true, error: null });
+      try {
+        const updated = await equipmentApi.updateEquipment(id, data);
+        set((state) => ({
+          equipment: state.equipment.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  name: updated.name,
+                  category: updated.category,
+                  quantity: updated.quantity,
+                }
+              : item,
+          ),
+          isSaving: false,
+        }));
+        return updated;
+      } catch (err) {
+        const message =
+          err instanceof ApiError ? err.message : 'Failed to update equipment';
+        set({ isSaving: false, error: message });
+        throw err;
+      }
+    },
+  );
+
+  const deleteEquipment = singleFlight(
+    async (id: string, currentPage = 1) => {
+      set({ isSaving: true, error: null });
+      try {
+        await equipmentApi.deleteEquipment(id);
+        const { pagination } = get();
+        const limit = pagination?.limit ?? 10;
+        const total = (pagination?.total ?? 1) - 1;
+        const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+        const pageToFetch =
+          currentPage > totalPages && totalPages > 0 ? totalPages : currentPage;
+        await get().fetchEquipment({ page: pageToFetch, limit });
+        set({ isSaving: false });
+        return pageToFetch;
+      } catch (err) {
+        const message =
+          err instanceof ApiError ? err.message : 'Failed to delete equipment';
+        set({ isSaving: false, error: message });
+        throw err;
+      }
+    },
+  );
+
+  return {
   equipment: [],
   pagination: null,
   total: 0,
@@ -71,68 +140,10 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
     }
   },
 
-  createEquipment: async (data) => {
-    set({ isSaving: true, error: null });
-    try {
-      const created = await equipmentApi.createEquipment(data);
-      const { pagination } = get();
-      await get().fetchEquipment({ page: 1, limit: pagination?.limit ?? 10 });
-      set({ isSaving: false });
-      return created;
-    } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : 'Failed to create equipment';
-      set({ isSaving: false, error: message });
-      throw err;
-    }
-  },
-
-  updateEquipment: async (id, data) => {
-    set({ isSaving: true, error: null });
-    try {
-      const updated = await equipmentApi.updateEquipment(id, data);
-      set((state) => ({
-        equipment: state.equipment.map((item) =>
-          item.id === id
-            ? {
-                ...item,
-                name: updated.name,
-                category: updated.category,
-                quantity: updated.quantity,
-              }
-            : item,
-        ),
-        isSaving: false,
-      }));
-      return updated;
-    } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : 'Failed to update equipment';
-      set({ isSaving: false, error: message });
-      throw err;
-    }
-  },
-
-  deleteEquipment: async (id, currentPage = 1) => {
-    set({ isSaving: true, error: null });
-    try {
-      await equipmentApi.deleteEquipment(id);
-      const { pagination } = get();
-      const limit = pagination?.limit ?? 10;
-      const total = (pagination?.total ?? 1) - 1;
-      const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
-      const pageToFetch =
-        currentPage > totalPages && totalPages > 0 ? totalPages : currentPage;
-      await get().fetchEquipment({ page: pageToFetch, limit });
-      set({ isSaving: false });
-      return pageToFetch;
-    } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : 'Failed to delete equipment';
-      set({ isSaving: false, error: message });
-      throw err;
-    }
-  },
+  createEquipment,
+  updateEquipment,
+  deleteEquipment,
 
   clearError: () => set({ error: null }),
-}));
+  };
+});

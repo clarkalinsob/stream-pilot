@@ -10,6 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -19,7 +20,7 @@ type ConfirmDialogProps = {
   cancelLabel?: string;
   variant?: 'default' | 'destructive';
   isLoading?: boolean;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   onCancel: () => void;
 };
 
@@ -34,6 +35,9 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const { run: runConfirm, isPending } = useSingleFlight(onConfirm);
+  const isBusy = isPending || isLoading;
+
   return (
     <AlertDialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
       <AlertDialogContent>
@@ -42,18 +46,18 @@ export function ConfirmDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading} onClick={onCancel}>
+          <AlertDialogCancel disabled={isBusy} onClick={onCancel}>
             {cancelLabel}
           </AlertDialogCancel>
           <AlertDialogAction
             variant={variant === 'destructive' ? 'destructive' : 'default'}
-            disabled={isLoading}
+            disabled={isBusy}
             onClick={(e) => {
               e.preventDefault();
-              onConfirm();
+              void runConfirm();
             }}
           >
-            {isLoading ? 'Please wait…' : confirmLabel}
+            {isBusy ? 'Please wait…' : confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

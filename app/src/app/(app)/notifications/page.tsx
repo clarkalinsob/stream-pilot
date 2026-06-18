@@ -11,7 +11,7 @@ import { PushNotificationsSettings } from '@/components/notifications/push-notif
 import { Button } from '@/components/ui/button';
 import { requestNotificationCountRefresh } from '@/hooks/use-notification-count';
 import { usePagination } from '@/hooks/use-pagination';
-import {
+import { useSingleFlight } from '@/hooks/use-single-flight';import {
   fetchNotifications,
   markAllNotificationsRead,
   markNotificationRead,
@@ -55,15 +55,15 @@ function NotificationsPageContent() {
     void loadNotifications();
   }, [loadNotifications]);
 
-  async function handleMarkRead(notification: NotificationItem) {
-    if (notification.read) {
-      if (notification.productionId) {
-        router.push(`/productions/${notification.productionId}`);
+  const markReadImpl = useCallback(
+    async (notification: NotificationItem) => {
+      if (notification.read) {
+        if (notification.productionId) {
+          router.push(`/productions/${notification.productionId}`);
+        }
+        return;
       }
-      return;
-    }
 
-    try {
       await markNotificationRead(notification.id);
       setNotifications((prev) =>
         prev.map((item) =>
@@ -74,6 +74,24 @@ function NotificationsPageContent() {
       if (notification.productionId) {
         router.push(`/productions/${notification.productionId}`);
       }
+    },
+    [router],
+  );
+
+  const markAllReadImpl = useCallback(async () => {
+    await markAllNotificationsRead();
+    setNotifications((prev) => prev.map((item) => ({ ...item, read: true })));
+    requestNotificationCountRefresh();
+  }, []);
+
+  const { run: runMarkRead, isPending: isMarkingRead } =
+    useSingleFlight(markReadImpl);
+  const { run: runMarkAllRead, isPending: isMarkingAll } =
+    useSingleFlight(markAllReadImpl);
+
+  async function handleMarkRead(notification: NotificationItem) {
+    try {
+      await runMarkRead(notification);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to mark as read');
     }
@@ -81,9 +99,7 @@ function NotificationsPageContent() {
 
   async function handleMarkAllRead() {
     try {
-      await markAllNotificationsRead();
-      setNotifications((prev) => prev.map((item) => ({ ...item, read: true })));
-      requestNotificationCountRefresh();
+      await runMarkAllRead();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to mark all as read');
     }
@@ -98,8 +114,13 @@ function NotificationsPageContent() {
         description="Alerts when a production is scheduled, plus reminders 24 hours and 2 hours before a show starts."
       >
         {hasUnread ? (
-          <Button variant="outline" onClick={() => void handleMarkAllRead()}>
-            Mark All Read
+          <Button
+            variant="outline"
+            loading={isMarkingAll}
+            disabled={isMarkingAll || isMarkingRead}
+            onClick={() => void handleMarkAllRead()}
+          >
+            {isMarkingAll ? 'Marking…' : 'Mark All Read'}
           </Button>
         ) : null}
       </PageHeader>
@@ -130,6 +151,7 @@ function NotificationsPageContent() {
               <li key={notification.id}>
                 <button
                   type="button"
+                  disabled={isMarkingRead || isMarkingAll}
                   onClick={() => void handleMarkRead(notification)}
                   className={cn(
                     'flex w-full flex-col gap-1 px-4 py-3 text-left transition-colors hover:bg-muted/50',

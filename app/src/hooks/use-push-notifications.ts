@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import {
   getCurrentPushSubscription,
   getPushSupportState,
@@ -13,8 +14,6 @@ export type PushState = 'loading' | 'enabled' | 'disabled' | 'denied' | 'unsuppo
 
 export function usePushNotifications() {
   const [pushState, setPushState] = useState<PushState>('loading');
-  const [isEnabling, setIsEnabling] = useState(false);
-  const [isDisabling, setIsDisabling] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refreshPushState = useCallback(async () => {
@@ -40,12 +39,11 @@ export function usePushNotifications() {
     void refreshPushState();
   }, [refreshPushState]);
 
-  const enablePush = useCallback(async () => {
+  const enablePushImpl = useCallback(async () => {
     if (pushState === 'enabled' || pushState === 'unsupported' || pushState === 'denied') {
       return false;
     }
 
-    setIsEnabling(true);
     setError(null);
 
     try {
@@ -66,17 +64,14 @@ export function usePushNotifications() {
       setError(err instanceof Error ? err.message : 'Failed to enable push notifications');
       await refreshPushState();
       return false;
-    } finally {
-      setIsEnabling(false);
     }
   }, [pushState, refreshPushState]);
 
-  const disablePush = useCallback(async () => {
-    if (pushState !== 'enabled' || isDisabling) {
+  const disablePushImpl = useCallback(async () => {
+    if (pushState !== 'enabled') {
       return;
     }
 
-    setIsDisabling(true);
     setError(null);
 
     try {
@@ -85,10 +80,11 @@ export function usePushNotifications() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to disable push notifications');
       await refreshPushState();
-    } finally {
-      setIsDisabling(false);
     }
-  }, [pushState, isDisabling, refreshPushState]);
+  }, [pushState, refreshPushState]);
+
+  const { run: enablePush, isPending: isEnabling } = useSingleFlight(enablePushImpl);
+  const { run: disablePush, isPending: isDisabling } = useSingleFlight(disablePushImpl);
 
   return {
     pushState,

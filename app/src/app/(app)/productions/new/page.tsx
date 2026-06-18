@@ -60,6 +60,7 @@ export default function NewProductionPage() {
     {},
   );
   const [showSegmentErrors, setShowSegmentErrors] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   function validateDetails() {
     return isProductionDetailsValid(details, { requireSchedule: true });
@@ -88,6 +89,8 @@ export default function NewProductionPage() {
   async function handleCreate() {
     setShowSegmentErrors(true);
     if (!validateDetails() || !validateSegments()) return;
+
+    setIsCreating(true);
     try {
       const created = await createProduction({
         title: details.title.trim(),
@@ -99,7 +102,7 @@ export default function NewProductionPage() {
       });
       router.push(`/productions/${created.id}`);
     } catch {
-      // error in store
+      setIsCreating(false);
     }
   }
 
@@ -166,7 +169,7 @@ export default function NewProductionPage() {
             onSubmit={handleCreate}
             submitLabel="Create Production"
             submitType="button"
-            isLoading={isSaving}
+            isLoading={isSaving || isCreating}
           />
         </div>
       )}

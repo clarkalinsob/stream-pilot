@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useCallback, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import {
   Card,
   CardContent,
@@ -41,19 +42,34 @@ export function SignupForm({
 
   const displayError = localError ?? error;
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setLocalError(null);
-    clearError();
-
+  const submitRegister = useCallback(async () => {
     if (password !== confirmPassword) {
       setLocalError('Passwords do not match');
       return;
     }
 
+    await register({ firstName, lastName, email, password });
+    router.push('/dashboard');
+  }, [
+    confirmPassword,
+    email,
+    firstName,
+    lastName,
+    password,
+    register,
+    router,
+  ]);
+
+  const { run: runSubmit, isPending } = useSingleFlight(submitRegister);
+  const isBusy = isPending || isLoading;
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setLocalError(null);
+    clearError();
+
     try {
-      await register({ firstName, lastName, email, password });
-      router.push('/dashboard');
+      await runSubmit();
     } catch {
       // error is set in store
     }
@@ -137,8 +153,8 @@ export function SignupForm({
                 />
               </Field>
               <Field>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Creating account…' : 'Create account'}
+                <Button type="submit" className="w-full" loading={isBusy} disabled={isBusy}>
+                  {isBusy ? 'Creating account…' : 'Create account'}
                 </Button>
                 <FieldDescription className="text-center">
                   Already have an account? <Link href="/login">Login</Link>

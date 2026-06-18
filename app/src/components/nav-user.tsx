@@ -2,6 +2,7 @@
 
 import { ChevronsUpDown, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useCallback } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -17,7 +18,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { useAuth, useAuthStore } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth';
+import { useSingleFlight } from '@/hooks/use-single-flight';
+import { useAuthStore } from '@/stores/auth-store';
 import type { User } from '@/types/user';
 
 function getInitials(user: User) {
@@ -32,12 +35,16 @@ export function NavUser() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
   const logout = useAuthStore((s) => s.logout);
+  const authBusy = useAuthStore((s) => s.isLoading);
   const { isMobile } = useSidebar();
 
-  async function handleLogout() {
+  const logoutImpl = useCallback(async () => {
     await logout();
     router.push('/login');
-  }
+  }, [logout, router]);
+
+  const { run: runLogout, isPending } = useSingleFlight(logoutImpl);
+  const isBusy = isPending || authBusy;
 
   const displayName = user ? getDisplayName(user) : 'Account';
   const initials = user ? getInitials(user) : '?';
@@ -82,9 +89,12 @@ export function NavUser() {
               </DropdownMenuLabel>
             ) : null}
             {user ? <DropdownMenuSeparator /> : null}
-            <DropdownMenuItem onClick={handleLogout}>
+            <DropdownMenuItem
+              disabled={isBusy}
+              onClick={() => void runLogout()}
+            >
               <LogOut />
-              Log out
+              {isBusy ? 'Logging out…' : 'Log out'}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

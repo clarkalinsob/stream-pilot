@@ -101,6 +101,7 @@ export function ProductionOverviewPanel({
               </Button>
               <Button
                 size="sm"
+                loading={isSaving}
                 disabled={isSaving || saveDisabled}
                 onClick={onSave}
               >
