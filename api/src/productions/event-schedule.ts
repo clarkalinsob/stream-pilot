@@ -40,3 +40,46 @@ export function computeEndTimeDate(
   if (!startTime || durationMinutes <= 0) return null;
   return parseTimeString(addMinutesToTime(startTime, durationMinutes));
 }
+
+export function isWithinHoursBeforeEvent(
+  eventDateTime: Date,
+  now: Date,
+  hoursBefore: number,
+): boolean {
+  const msUntilEvent = eventDateTime.getTime() - now.getTime();
+  if (msUntilEvent <= 0) {
+    return false;
+  }
+
+  const minuteMs = 60 * 1000;
+  const targetMinutes = hoursBefore * 60;
+  const minutesUntil = msUntilEvent / minuteMs;
+  return minutesUntil > targetMinutes - 1 && minutesUntil <= targetMinutes;
+}
+
+export function formatTimeUntilEvent(
+  eventDateTime: Date,
+  now: Date = new Date(),
+): string {
+  const msUntil = eventDateTime.getTime() - now.getTime();
+  if (msUntil <= 0) {
+    return 'starting now';
+  }
+
+  const minuteMs = 60 * 1000;
+  const hourMs = 60 * minuteMs;
+  const dayMs = 24 * hourMs;
+
+  if (msUntil >= dayMs) {
+    const days = Math.floor(msUntil / dayMs);
+    return `${days} day${days === 1 ? '' : 's'}`;
+  }
+
+  if (msUntil >= hourMs) {
+    const hours = Math.floor(msUntil / hourMs);
+    return `${hours} hour${hours === 1 ? '' : 's'}`;
+  }
+
+  const minutes = Math.max(1, Math.floor(msUntil / minuteMs));
+  return `${minutes} minute${minutes === 1 ? '' : 's'}`;
+}

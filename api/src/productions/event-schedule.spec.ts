@@ -1,6 +1,8 @@
 import {
   addMinutesToTime,
   computeEndTimeDate,
+  formatTimeUntilEvent,
+  isWithinHoursBeforeEvent,
   parseDateString,
   parseTimeString,
   sumDurationMinutes,
@@ -91,6 +93,39 @@ describe('event-schedule', () => {
       const time = parseTimeString('08:45');
       expect(time.getUTCHours()).toBe(8);
       expect(time.getUTCMinutes()).toBe(45);
+    });
+  });
+
+  describe('isWithinHoursBeforeEvent', () => {
+    it('matches the reminder window before the event', () => {
+      const eventDateTime = new Date('2026-06-19T08:00:00.000Z');
+      const now = new Date('2026-06-18T08:00:30.000Z');
+
+      expect(isWithinHoursBeforeEvent(eventDateTime, now, 24)).toBe(true);
+      expect(isWithinHoursBeforeEvent(eventDateTime, now, 2)).toBe(false);
+    });
+
+    it('fires within one minute of the two-hour mark', () => {
+      const eventDateTime = new Date('2026-06-19T01:12:00.000Z');
+      const now = new Date('2026-06-18T23:12:00.000Z');
+
+      expect(isWithinHoursBeforeEvent(eventDateTime, now, 2)).toBe(true);
+    });
+  });
+
+  describe('formatTimeUntilEvent', () => {
+    it('formats days, hours, and minutes', () => {
+      const event = new Date('2026-06-20T08:00:00.000Z');
+
+      expect(
+        formatTimeUntilEvent(event, new Date('2026-06-18T08:00:00.000Z')),
+      ).toBe('2 days');
+      expect(
+        formatTimeUntilEvent(event, new Date('2026-06-20T06:00:00.000Z')),
+      ).toBe('2 hours');
+      expect(
+        formatTimeUntilEvent(event, new Date('2026-06-20T07:45:00.000Z')),
+      ).toBe('15 minutes');
     });
   });
 });

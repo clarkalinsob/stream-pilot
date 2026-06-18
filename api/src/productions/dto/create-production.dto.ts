@@ -30,6 +30,10 @@ export class CreateProductionDto {
   @Matches(/^\d{2}:\d{2}(:\d{2})?$/)
   startTime!: string;
 
+  @IsDateString()
+  @IsNotEmpty()
+  startsAt!: string;
+
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })

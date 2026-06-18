@@ -39,6 +39,12 @@ enum EquipmentCategory {
   OTHER
 }
 
+enum NotificationType {
+  PRODUCTION_SCHEDULED
+  PRODUCTION_REMINDER_24H
+  PRODUCTION_REMINDER_2H
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -47,6 +53,9 @@ model User {
   lastName  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  pushSubscriptions PushSubscription[]
+  notifications     Notification[]
 }
 
 model Production {
@@ -56,6 +65,7 @@ model Production {
   description String?
   eventDate   DateTime?        @db.Date
   startTime   DateTime?        @db.Time(0)
+  startsAt    DateTime?
   endTime     DateTime?        @db.Time(0)
   status      ProductionStatus @default(DRAFT)
   createdAt   DateTime         @default(now())
@@ -131,4 +141,33 @@ model ProductionEquipmentAssignment {
   equipment  Equipment  @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
 
   @@id([productionId, equipmentId])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Notification {
+  id           String           @id @default(cuid())
+  userId       String
+  type         NotificationType
+  title        String
+  body         String
+  read         Boolean          @default(false)
+  productionId String?
+  createdAt    DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, productionId, type])
 }

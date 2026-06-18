@@ -28,6 +28,10 @@ export class UpdateProductionDto {
   startTime?: string;
 
   @IsOptional()
+  @IsDateString()
+  startsAt?: string;
+
+  @IsOptional()
   @IsEnum(ProductionStatus)
   status?: ProductionStatus;
 }

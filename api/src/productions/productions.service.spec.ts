@@ -1,11 +1,13 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ProductionStatus } from '@prisma/client';
+import { NotificationType, ProductionStatus } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProductionsService } from './productions.service';
 
 describe('ProductionsService', () => {
   let service: ProductionsService;
+  let notificationsService: { notifyAndPush: jest.Mock };
   let prisma: {
     production: {
       findFirst: jest.Mock;
@@ -26,6 +28,7 @@ describe('ProductionsService', () => {
     description: null,
     eventDate: new Date('2026-06-20T00:00:00.000Z'),
     startTime: new Date(Date.UTC(1970, 0, 1, 8, 0)),
+    startsAt: new Date('2026-06-20T08:00:00.000Z'),
     endTime: new Date(Date.UTC(1970, 0, 1, 9, 30)),
     status: ProductionStatus.DRAFT,
     createdAt: new Date('2026-06-01T00:00:00.000Z'),
@@ -57,6 +60,9 @@ describe('ProductionsService', () => {
   };
 
   beforeEach(async () => {
+    notificationsService = {
+      notifyAndPush: jest.fn().mockResolvedValue(undefined),
+    };
     prisma = {
       production: {
         findFirst: jest.fn(),
@@ -71,6 +77,7 @@ describe('ProductionsService', () => {
       providers: [
         ProductionsService,
         { provide: PrismaService, useValue: prisma },
+        { provide: NotificationsService, useValue: notificationsService },
       ],
     }).compile();
 
@@ -139,6 +146,7 @@ describe('ProductionsService', () => {
         title: 'Morning Show',
         eventDate: '2026-06-20',
         startTime: '08:00',
+        startsAt: '2026-06-20T08:00:00.000Z',
         runSheetItems: [
           { title: 'Intro', durationMinutes: 60 },
           { title: 'Segment', durationMinutes: 30 },
@@ -161,6 +169,53 @@ describe('ProductionsService', () => {
         }),
       );
       expect(result.endTime).toBe('09:30');
+    });
+  });
+
+  describe('update', () => {
+    it('notifies when status changes to SCHEDULED with time until event', async () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date('2026-06-20T06:00:00.000Z'));
+
+      prisma.production.findFirst.mockResolvedValue({
+        ...baseProduction,
+        status: ProductionStatus.DRAFT,
+      });
+
+      const findUniqueMock = jest.fn().mockResolvedValue({
+        ...baseProduction,
+        status: ProductionStatus.SCHEDULED,
+      });
+
+      prisma.$transaction.mockImplementation(async (callback) =>
+        callback({
+          production: {
+            update: jest.fn(),
+            findUniqueOrThrow: findUniqueMock,
+          },
+          runSheetItem: {
+            findMany: jest.fn().mockResolvedValue(baseProduction.runSheetItems),
+          },
+        }),
+      );
+
+      await service.update(userId, productionId, {
+        status: ProductionStatus.SCHEDULED,
+      });
+
+      await Promise.resolve();
+
+      expect(notificationsService.notifyAndPush).toHaveBeenCalledWith(
+        userId,
+        expect.objectContaining({
+          type: NotificationType.PRODUCTION_SCHEDULED,
+          productionId,
+          title: 'Morning Show is Scheduled',
+          body: expect.stringContaining('starts in 2 hours'),
+        }),
+      );
+
+      jest.useRealTimers();
     });
   });
 

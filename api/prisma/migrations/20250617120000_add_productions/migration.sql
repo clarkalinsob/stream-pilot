@@ -11,6 +11,7 @@ CREATE TABLE "Production" (
     "startTime" TIME,
     "endTime" TIME,
     "status" "ProductionStatus" NOT NULL DEFAULT 'DRAFT',
+    "startsAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

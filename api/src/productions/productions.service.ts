@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, Production } from '@prisma/client';
+import { NotificationType, Prisma, Production, ProductionStatus } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductionDto } from './dto/create-production.dto';
 import { ListProductionsQueryDto } from './dto/list-productions-query.dto';
@@ -11,6 +12,7 @@ import {
   parseDateString,
   parseTimeString,
   sumDurationMinutes,
+  formatTimeUntilEvent,
   toTimeString,
 } from './event-schedule';
 import {
@@ -25,7 +27,10 @@ type PrismaTx = Prisma.TransactionClient;
 
 @Injectable()
 export class ProductionsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async findAll(
     userId: string,
@@ -89,6 +94,7 @@ export class ProductionsService {
           description: dto.description,
           eventDate: parseDateString(dto.eventDate),
           startTime,
+          startsAt: new Date(dto.startsAt),
           endTime: endTime ?? undefined,
           runSheetItems: {
             create: dto.runSheetItems.map((item, index) => ({
@@ -111,7 +117,7 @@ export class ProductionsService {
     id: string,
     dto: UpdateProductionDto,
   ): Promise<ProductionDetail> {
-    await this.findOwnedOrThrow(userId, id);
+    const existing = await this.findOwnedOrThrow(userId, id);
 
     const production = await this.prisma.$transaction(async (tx) => {
       await tx.production.update({
@@ -125,6 +131,9 @@ export class ProductionsService {
           ...(dto.startTime !== undefined && {
             startTime: dto.startTime ? parseTimeString(dto.startTime) : null,
           }),
+          ...(dto.startsAt !== undefined && {
+            startsAt: dto.startsAt ? new Date(dto.startsAt) : null,
+          }),
           ...(dto.status !== undefined && { status: dto.status }),
         },
       });
@@ -137,7 +146,35 @@ export class ProductionsService {
       });
     });
 
+    if (
+      dto.status === ProductionStatus.SCHEDULED &&
+      existing.status !== ProductionStatus.SCHEDULED
+    ) {
+      this.notifyProductionScheduled(userId, production);
+    }
+
     return toProductionDetail(production);
+  }
+
+  private notifyProductionScheduled(
+    userId: string,
+    production: Production & { startsAt: Date | null },
+  ): void {
+    if (!production.startsAt) {
+      return;
+    }
+
+    const timeUntil = formatTimeUntilEvent(production.startsAt);
+
+    void this.notificationsService
+      .notifyAndPush(userId, {
+        type: NotificationType.PRODUCTION_SCHEDULED,
+        title: `${production.title} is Scheduled`,
+        body: `starts in ${timeUntil}`,
+        productionId: production.id,
+        url: `/productions/${production.id}`,
+      })
+      .catch(() => undefined);
   }
 
   async replaceRunSheet(
