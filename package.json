@@ -11,7 +11,9 @@
     "format:check": "prettier --check \"api/src/**/*.{ts,tsx}\" \"app/src/**/*.{ts,tsx}\"",
     "migrate": "pnpm --filter stream-pilot-api prisma:migrate",
     "migrate:deploy": "pnpm --filter stream-pilot-api exec prisma migrate deploy",
-    "test": "pnpm --filter stream-pilot-app test"
+    "test": "pnpm -r test",
+    "test:app": "pnpm --filter stream-pilot-app test",
+    "test:api": "pnpm --filter stream-pilot-api test"
   },
   "devDependencies": {
     "prettier": "^3.5.3"

@@ -9,13 +9,18 @@ import {
 import {
   formatCrewRole,
   formatEquipmentCategory,
+  isCrewRole,
 } from '@/lib/resources';
 import {
   getCrewFormErrors,
+  getEquipmentFormErrors,
   getProductionDetailsErrors,
   getRunSheetSegmentErrors,
   getVisibleFieldErrors,
   getVisibleRecordErrors,
+  isCrewFormValid,
+  isEquipmentFormValid,
+  isProductionDetailsValid,
   isRunSheetValid,
 } from '@/lib/validation';
 import {
@@ -178,6 +183,22 @@ describe('formatCrewRole', () => {
     expect(formatCrewRole('VIDEO')).toBe('Video');
     expect(formatCrewRole('FLOOR')).toBe('Floor');
   });
+
+  it('falls back for unknown roles', () => {
+    expect(formatCrewRole('CUSTOM_ROLE')).toBe('CUSTOM ROLE');
+  });
+});
+
+describe('isCrewRole', () => {
+  it('returns true for known crew roles', () => {
+    expect(isCrewRole('CAMERAMAN')).toBe(true);
+    expect(isCrewRole('DIRECTOR')).toBe(true);
+  });
+
+  it('returns false for unknown values', () => {
+    expect(isCrewRole('CUSTOM_ROLE')).toBe(false);
+    expect(isCrewRole('')).toBe(false);
+  });
 });
 
 describe('formatEquipmentCategory', () => {
@@ -247,5 +268,44 @@ describe('validation', () => {
     expect(getVisibleRecordErrors(segmentErrors, { a: true }, false)).toEqual({
       a: 'Title is required.',
     });
+  });
+
+  it('requires crew name', () => {
+    expect(getCrewFormErrors({ name: '', email: '', phone: '' }).name).toBe(
+      'Name is required.',
+    );
+    expect(isCrewFormValid({ name: 'Alex', email: '', phone: '' })).toBe(true);
+  });
+
+  it('validates equipment name and quantity', () => {
+    expect(getEquipmentFormErrors({ name: '' }).name).toBe('Name is required.');
+    expect(isEquipmentFormValid({ name: 'Camera', quantity: '0' })).toBe(false);
+    expect(isEquipmentFormValid({ name: 'Camera', quantity: 'abc' })).toBe(
+      false,
+    );
+    expect(isEquipmentFormValid({ name: 'Camera', quantity: '2' })).toBe(true);
+  });
+
+  it('requires schedule fields when requireSchedule is enabled', () => {
+    const values = { title: 'Show', eventDate: '', startTime: '' };
+    expect(isProductionDetailsValid(values, { requireSchedule: true })).toBe(
+      false,
+    );
+    expect(
+      getProductionDetailsErrors(values, { requireSchedule: true }),
+    ).toEqual({
+      eventDate: 'Event date is required.',
+      startTime: 'Start time is required.',
+    });
+    expect(
+      isProductionDetailsValid(
+        { title: 'Show', eventDate: '2026-06-20', startTime: '10:00' },
+        { requireSchedule: true },
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects empty run sheet', () => {
+    expect(isRunSheetValid([])).toBe(false);
   });
 });
