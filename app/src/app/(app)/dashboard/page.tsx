@@ -1,74 +1,145 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Clapperboard } from 'lucide-react';
+import {
+  Calendar,
+  Clapperboard,
+  Package,
+  Users,
+} from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { apiUrl } from '@/lib/api';
-import { listProductions } from '@/lib/productions';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { fetchDashboardStats } from '@/lib/dashboard';
+import { formatKpiValue } from '@/lib/dashboard-stats';
+import type { DashboardStats } from '@/types/dashboard';
+import { ResourceInsights } from '@/components/dashboard/resource-insights';
+import { RunSheetSummary } from '@/components/dashboard/run-sheet-summary';
+import { StatCard, StatCardSkeleton } from '@/components/dashboard/stat-card';
+import { StatusBreakdown } from '@/components/dashboard/status-breakdown';
+import { UpcomingProductionsList } from '@/components/dashboard/upcoming-productions-list';
+import { ErrorAlert } from '@/components/shared/error-alert';
 
 export default function DashboardPage() {
-  const { user, isLoading } = useAuth();
-  const [status, setStatus] = useState('Checking API...');
-  const [productionCount, setProductionCount] = useState<number | null>(null);
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch(`${apiUrl}/health`, { credentials: 'include' })
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((health) => setStatus(`API: ${health.status} | DB: ${health.db}`))
-      .catch(() => setStatus('API unreachable'));
+    let cancelled = false;
+
+    fetchDashboardStats()
+      .then((data) => {
+        if (!cancelled) {
+          setStats(data);
+          setError('');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setStats(null);
+          setError('Unable to load dashboard analytics. Please try again.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  useEffect(() => {
-    listProductions({ page: 1, limit: 1 })
-      .then((result) => setProductionCount(result.meta.total))
-      .catch(() => setProductionCount(null));
-  }, []);
+  const showSkeleton = isLoading && !stats;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        {isLoading && !user ? (
-          <p className="mt-2 text-muted-foreground">Loading…</p>
+        <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
+        {isAuthLoading && !user ? (
+          <p className="mt-1 text-sm text-muted-foreground">Loading…</p>
         ) : user ? (
-          <p className="mt-2 text-muted-foreground">
-            Welcome back, {user.firstName}!
+          <p className="mt-1 text-sm text-muted-foreground">
+            Welcome back, {user.firstName}! Overview of your productions and
+            resources.
           </p>
         ) : null}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">System Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">{status}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Productions</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <p className="text-2xl font-semibold">
-              {productionCount === null ? '—' : productionCount}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {productionCount === 1 ? 'production' : 'productions'} in your
-              account
-            </p>
-            <Button asChild variant="outline" size="sm" className="w-fit">
-              <Link href="/productions">
-                <Clapperboard />
-                View Productions
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+      {error && (
+        <ErrorAlert message={error} onDismiss={() => setError('')} />
+      )}
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {showSkeleton ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            <StatCard
+              label="Productions"
+              value={formatKpiValue(stats?.productions.total)}
+              icon={Clapperboard}
+              href="/productions"
+            />
+            <StatCard
+              label="Scheduled"
+              value={formatKpiValue(stats?.productions.byStatus.SCHEDULED)}
+              icon={Calendar}
+              href="/productions"
+            />
+            <StatCard
+              label="Crew members"
+              value={formatKpiValue(stats?.crew.total)}
+              icon={Users}
+              href="/resources"
+            />
+            <StatCard
+              label="Equipment"
+              value={formatKpiValue(stats?.equipment.total)}
+              icon={Package}
+              href="/resources"
+            />
+          </>
+        )}
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-2">
+        <StatusBreakdown
+          byStatus={
+            stats?.productions.byStatus ?? {
+              DRAFT: 0,
+              SCHEDULED: 0,
+              COMPLETED: 0,
+            }
+          }
+          total={stats?.productions.total ?? 0}
+          isLoading={showSkeleton}
+        />
+        <UpcomingProductionsList
+          productions={stats?.upcomingProductions ?? []}
+          isLoading={showSkeleton}
+        />
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-2">
+        <RunSheetSummary
+          totalSegments={stats?.runSheet.totalSegments ?? 0}
+          totalDurationMinutes={stats?.runSheet.totalDurationMinutes ?? 0}
+          isLoading={showSkeleton}
+        />
+        <ResourceInsights
+          stats={{
+            crew: stats?.crew ?? { total: 0, unassigned: 0, topBooked: [] },
+            equipment: stats?.equipment ?? { total: 0, unassigned: 0 },
+          }}
+          isLoading={showSkeleton}
+        />
       </div>
     </div>
   );
