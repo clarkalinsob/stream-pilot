@@ -69,7 +69,7 @@ export function EquipmentFormDialog({
       description="Gear and inventory for your productions."
       onOpenChange={onOpenChange}
       onSubmit={handleSave}
-      submitLabel={isEdit ? 'Save equipment' : 'Add Equipment'}
+      submitLabel={isEdit ? 'Save Equipment' : 'Add Equipment'}
       isLoading={isSaving}
     >
       <EquipmentFormFields

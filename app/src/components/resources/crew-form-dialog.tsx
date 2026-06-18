@@ -69,7 +69,7 @@ export function CrewFormDialog({
       description="People you work with on productions."
       onOpenChange={onOpenChange}
       onSubmit={handleSave}
-      submitLabel={isEdit ? 'Save crew member' : 'Add Crew Member'}
+      submitLabel={isEdit ? 'Save Crew Member' : 'Add Crew Member'}
       isLoading={isSaving}
     >
       <CrewFormFields

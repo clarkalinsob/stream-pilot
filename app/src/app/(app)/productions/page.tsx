@@ -141,7 +141,7 @@ function ProductionsPageContent() {
         title="Remove production?"
         description={
           deleteTarget
-            ? `This will permanently remove "${deleteTarget.title}" and its run sheet.`
+            ? `This will permanently remove "${deleteTarget.title}" and all associated data.`
             : ''
         }
         confirmLabel="Remove"
