@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useCallback, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { AuthBrandHeader } from '@/components/auth/auth-brand-header';
 import { Button } from '@/components/ui/button';
 import { useSingleFlight } from '@/hooks/use-single-flight';
 import {
@@ -29,7 +30,7 @@ export function SignupForm({
 }: React.ComponentProps<'div'>) {
   const router = useRouter();
   const register = useAuthStore((s) => s.register);
-  const isLoading = useAuthStore((s) => s.isLoading);
+  const pendingAction = useAuthStore((s) => s.pendingAction);
   const error = useAuthStore((s) => s.error);
   const clearError = useAuthStore((s) => s.clearError);
 
@@ -61,7 +62,7 @@ export function SignupForm({
   ]);
 
   const { run: runSubmit, isPending } = useSingleFlight(submitRegister);
-  const isBusy = isPending || isLoading;
+  const isBusy = pendingAction === 'register' || isPending;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -76,17 +77,23 @@ export function SignupForm({
   }
 
   return (
-    <div className={cn('flex flex-col gap-6', className)} {...props}>
+    <div
+      className={cn('flex flex-col gap-6', className)}
+      aria-busy={isBusy}
+      {...props}
+    >
+      <AuthBrandHeader />
       <Card>
         <CardHeader>
           <CardTitle>Create your account</CardTitle>
           <CardDescription>
-            Enter your details below to create your account
+            Enter your details below to join Stream Pilot
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit}>
-            <FieldGroup>
+            <fieldset disabled={isBusy} className="min-w-0 border-0 p-0 m-0">
+              <FieldGroup>
               {displayError && (
                 <Field>
                   <FieldError>{displayError}</FieldError>
@@ -157,10 +164,16 @@ export function SignupForm({
                   {isBusy ? 'Creating account…' : 'Create account'}
                 </Button>
                 <FieldDescription className="text-center">
-                  Already have an account? <Link href="/login">Login</Link>
+                  Already have an account?{' '}
+                  {isBusy ? (
+                    <span className="text-muted-foreground">Login</span>
+                  ) : (
+                    <Link href="/login">Login</Link>
+                  )}
                 </FieldDescription>
               </Field>
-            </FieldGroup>
+              </FieldGroup>
+            </fieldset>
           </form>
         </CardContent>
       </Card>

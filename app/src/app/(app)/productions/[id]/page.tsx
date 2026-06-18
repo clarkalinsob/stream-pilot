@@ -22,6 +22,7 @@ import {
   isRunSheetValid,
 } from '@/lib/validation';
 import { useProductionsStore } from '@/stores/productions-store';
+import type { ProductionStatus } from '@/types/production';
 
 export default function ProductionDetailPage() {
   return (
@@ -176,6 +177,15 @@ function ProductionDetailContent() {
     }
   }
 
+  async function handleStatusChange(status: ProductionStatus) {
+    if (!current || status === current.status) return;
+    try {
+      await updateProduction(id, { status });
+    } catch {
+      // error in store
+    }
+  }
+
   if (isLoading && !current) {
     return (
       <div className="space-y-4">
@@ -241,6 +251,7 @@ function ProductionDetailContent() {
         onFieldBlur={(field) =>
           setDetailsTouched((prev) => ({ ...prev, [field]: true }))
         }
+        onStatusChange={handleStatusChange}
       />
 
       <ErrorAlert

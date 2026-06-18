@@ -7,7 +7,9 @@ import {
   type ProductionDetailsValues,
 } from './production-details-fields';
 import { ProductionMetaChips } from './production-meta-chips';
+import { ProductionStatusShortcuts } from './production-status-shortcuts';
 import { ProductionStatusBadge } from './status-badge';
+import type { ProductionStatus } from '@/types/production';
 
 type ProductionOverviewPanelProps = {
   values: ProductionDetailsValues;
@@ -23,6 +25,7 @@ type ProductionOverviewPanelProps = {
   saveDisabled: boolean;
   errors?: Partial<Record<'title' | 'eventDate' | 'startTime', string>>;
   onFieldBlur?: (field: 'title' | 'eventDate' | 'startTime') => void;
+  onStatusChange?: (status: ProductionStatus) => void;
 };
 
 
@@ -40,6 +43,7 @@ export function ProductionOverviewPanel({
   saveDisabled,
   errors,
   onFieldBlur,
+  onStatusChange,
 }: ProductionOverviewPanelProps) {
   return (
     <section className="rounded-xl border bg-gradient-to-br from-muted/50 via-background to-background p-6 print:hidden">
@@ -108,10 +112,19 @@ export function ProductionOverviewPanel({
               </Button>
             </>
           ) : (
-            <Button variant="outline" size="sm" onClick={onEdit}>
-              <Pencil />
-              Edit
-            </Button>
+            <>
+              {onStatusChange && values.status ? (
+                <ProductionStatusShortcuts
+                  status={values.status}
+                  disabled={isSaving}
+                  onStatusChange={onStatusChange}
+                />
+              ) : null}
+              <Button variant="outline" size="sm" onClick={onEdit}>
+                <Pencil />
+                Edit
+              </Button>
+            </>
           )}
         </div>
       </div>

@@ -42,6 +42,17 @@ export function getProductionStatusLabel(status: ProductionStatus) {
   return statusStyles[status].label;
 }
 
+export function getProductionStatusActionLabel(status: ProductionStatus) {
+  switch (status) {
+    case 'DRAFT':
+      return 'Mark as Draft';
+    case 'SCHEDULED':
+      return 'Mark as Scheduled';
+    case 'COMPLETED':
+      return 'Mark as Completed';
+  }
+}
+
 type ProductionStatusBadgeProps = {
   status: ProductionStatus;
   className?: string;

@@ -1,8 +1,8 @@
 'use client';
 
-import { ChevronsUpDown, LogOut } from 'lucide-react';
+import { ChevronsUpDown, Loader2, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -35,16 +35,18 @@ export function NavUser() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
   const logout = useAuthStore((s) => s.logout);
-  const authBusy = useAuthStore((s) => s.isLoading);
+  const pendingAction = useAuthStore((s) => s.pendingAction);
   const { isMobile } = useSidebar();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const logoutImpl = useCallback(async () => {
+    setMenuOpen(false);
     await logout();
     router.push('/login');
   }, [logout, router]);
 
   const { run: runLogout, isPending } = useSingleFlight(logoutImpl);
-  const isBusy = isPending || authBusy;
+  const isLoggingOut = pendingAction === 'logout' || isPending;
 
   const displayName = user ? getDisplayName(user) : 'Account';
   const initials = user ? getInitials(user) : '?';
@@ -53,10 +55,11 @@ export function NavUser() {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu>
+        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
+              disabled={isLoggingOut}
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
@@ -90,11 +93,18 @@ export function NavUser() {
             ) : null}
             {user ? <DropdownMenuSeparator /> : null}
             <DropdownMenuItem
-              disabled={isBusy}
-              onClick={() => void runLogout()}
+              disabled={isLoggingOut}
+              onSelect={(event) => {
+                event.preventDefault();
+                void runLogout();
+              }}
             >
-              <LogOut />
-              {isBusy ? 'Logging out…' : 'Log out'}
+              {isLoggingOut ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <LogOut />
+              )}
+              {isLoggingOut ? 'Logging out…' : 'Log out'}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

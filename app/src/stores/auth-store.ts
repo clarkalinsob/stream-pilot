@@ -8,9 +8,12 @@ type FetchUserOptions = {
   silent?: boolean;
 };
 
+export type AuthPendingAction = 'login' | 'logout' | 'register';
+
 type AuthState = {
   user: User | null;
   isLoading: boolean;
+  pendingAction: AuthPendingAction | null;
   error: string | null;
   fetchUser: (options?: FetchUserOptions) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
@@ -18,6 +21,7 @@ type AuthState = {
   logout: () => Promise<void>;
   handleSessionExpired: () => Promise<void>;
   clearError: () => void;
+  clearPendingAction: () => void;
   reset: () => void;
 };
 
@@ -26,44 +30,45 @@ let fetchUserRequestId = 0;
 export const useAuthStore = create<AuthState>((set, get) => {
   const login = singleFlight(async (email: string, password: string) => {
     fetchUserRequestId += 1;
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, pendingAction: 'login', error: null });
     try {
       const { user } = await authApi.login(email, password);
-      set({ user, isLoading: false });
+      set({ user, isLoading: false, pendingAction: 'login' });
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Login failed';
-      set({ isLoading: false, error: message });
+      set({ isLoading: false, pendingAction: null, error: message });
       throw err;
     }
   });
 
   const register = singleFlight(async (data: RegisterData) => {
     fetchUserRequestId += 1;
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, pendingAction: 'register', error: null });
     try {
       const { user } = await authApi.register(data);
-      set({ user, isLoading: false });
+      set({ user, isLoading: false, pendingAction: 'register' });
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : 'Registration failed';
-      set({ isLoading: false, error: message });
+      set({ isLoading: false, pendingAction: null, error: message });
       throw err;
     }
   });
 
   const logout = singleFlight(async () => {
     fetchUserRequestId += 1;
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, pendingAction: 'logout', error: null });
     try {
       await authApi.logout();
     } finally {
-      set({ user: null, isLoading: false });
+      set({ user: null, isLoading: false, pendingAction: 'logout' });
     }
   });
 
   return {
     user: null,
     isLoading: true,
+    pendingAction: null,
     error: null,
 
     fetchUser: async ({ silent = false } = {}) => {
@@ -115,9 +120,11 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
     clearError: () => set({ error: null }),
 
+    clearPendingAction: () => set({ pendingAction: null }),
+
     reset: () => {
       fetchUserRequestId += 1;
-      set({ user: null, isLoading: false, error: null });
+      set({ user: null, isLoading: false, pendingAction: null, error: null });
     },
   };
 });

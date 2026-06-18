@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useCallback, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { AuthBrandHeader } from '@/components/auth/auth-brand-header';
 import { Button } from '@/components/ui/button';
 import { useSingleFlight } from '@/hooks/use-single-flight';
 import {
@@ -29,7 +30,7 @@ export function LoginForm({
 }: React.ComponentProps<'div'>) {
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
-  const isLoading = useAuthStore((s) => s.isLoading);
+  const pendingAction = useAuthStore((s) => s.pendingAction);
   const error = useAuthStore((s) => s.error);
 
   const [email, setEmail] = useState('');
@@ -41,7 +42,7 @@ export function LoginForm({
   }, [email, login, password, router]);
 
   const { run: runSubmit, isPending } = useSingleFlight(submitLogin);
-  const isBusy = isPending || isLoading;
+  const isBusy = pendingAction === 'login' || isPending;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -53,55 +54,71 @@ export function LoginForm({
   }
 
   return (
-    <div className={cn('flex flex-col gap-6', className)} {...props}>
+    <div
+      className={cn('flex flex-col gap-6', className)}
+      aria-busy={isBusy}
+      {...props}
+    >
+      <AuthBrandHeader />
       <Card>
         <CardHeader>
-          <CardTitle>Login to your account</CardTitle>
+          <CardTitle>Sign in to your account</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            Enter your email and password to access Stream Pilot
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit}>
-            <FieldGroup>
-              {error && (
+            <fieldset disabled={isBusy} className="min-w-0 border-0 p-0 m-0">
+              <FieldGroup>
+                {error && (
+                  <Field>
+                    <FieldError>{error}</FieldError>
+                  </Field>
+                )}
                 <Field>
-                  <FieldError>{error}</FieldError>
+                  <FieldLabel htmlFor="email">Email</FieldLabel>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="m@example.com"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </Field>
-              )}
-              <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="password">Password</FieldLabel>
-                <Input
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </Field>
-              <Field>
-                <Button type="submit" className="w-full" loading={isBusy} disabled={isBusy}>
-                  {isBusy ? 'Signing in…' : 'Login'}
-                </Button>
-                <FieldDescription className="text-center">
-                  Don&apos;t have an account?{' '}
-                  <Link href="/signup">Sign up</Link>
-                </FieldDescription>
-              </Field>
-            </FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="password">Password</FieldLabel>
+                  <Input
+                    id="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </Field>
+                <Field>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    loading={isBusy}
+                    disabled={isBusy}
+                  >
+                    {isBusy ? 'Signing in…' : 'Login'}
+                  </Button>
+                  <FieldDescription className="text-center">
+                    Don&apos;t have an account?{' '}
+                    {isBusy ? (
+                      <span className="text-muted-foreground">Sign up</span>
+                    ) : (
+                      <Link href="/signup">Sign up</Link>
+                    )}
+                  </FieldDescription>
+                </Field>
+              </FieldGroup>
+            </fieldset>
           </form>
         </CardContent>
       </Card>
