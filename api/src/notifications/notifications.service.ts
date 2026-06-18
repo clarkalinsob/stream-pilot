@@ -29,7 +29,7 @@ export class NotificationsService implements OnModuleInit {
     const publicKey = this.config.get<string>('VAPID_PUBLIC_KEY')?.trim();
     const privateKey = this.config.get<string>('VAPID_PRIVATE_KEY')?.trim();
     const subject = (
-      this.config.get<string>('VAPID_SUBJECT') ?? 'mailto:clarkalinsob@gmail.com'
+      this.config.get<string>('VAPID_SUBJECT') ?? 'mailto:you@example.com'
     ).trim();
 
     if (publicKey && privateKey) {

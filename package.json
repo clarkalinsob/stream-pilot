@@ -13,9 +13,16 @@
     "migrate:deploy": "pnpm --filter stream-pilot-api exec prisma migrate deploy",
     "test": "pnpm -r test",
     "test:app": "pnpm --filter stream-pilot-app test",
-    "test:api": "pnpm --filter stream-pilot-api test"
+    "test:api": "pnpm --filter stream-pilot-api test",
+    "lint": "pnpm -r lint",
+    "lint:fix": "pnpm -r lint:fix"
   },
   "devDependencies": {
-    "prettier": "^3.5.3"
+    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/js": "^9.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.5.3",
+    "typescript-eslint": "^8.61.1"
   }
 }
