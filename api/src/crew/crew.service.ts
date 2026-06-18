@@ -2,8 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CrewMember } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCrewMemberDto } from './dto/create-crew-member.dto';
-import { ListCrewQueryDto } from './dto/list-crew-query.dto';
+import { CREW_SORT_FIELDS, ListCrewQueryDto } from './dto/list-crew-query.dto';
 import { UpdateCrewMemberDto } from './dto/update-crew-member.dto';
+import { resolveOrderBy } from '../common/list-query.util';
 import {
   CrewMemberDetail,
   PaginatedCrewResponse,
@@ -24,13 +25,20 @@ export class CrewService {
     const skip = (page - 1) * limit;
     const where = { userId };
 
+    const orderBy = resolveOrderBy(
+      query.sort,
+      query.order,
+      CREW_SORT_FIELDS,
+      [{ name: 'asc' }, { updatedAt: 'desc' }],
+    );
+
     const [members, total] = await Promise.all([
       this.prisma.crewMember.findMany({
         where,
         skip,
         take: limit,
         include: { _count: { select: { assignments: true } } },
-        orderBy: [{ name: 'asc' }, { updatedAt: 'desc' }],
+        orderBy,
       }),
       this.prisma.crewMember.count({ where }),
     ]);

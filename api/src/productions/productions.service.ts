@@ -7,10 +7,14 @@ import { NotificationType, Prisma, Production, ProductionStatus } from '@prisma/
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductionDto } from './dto/create-production.dto';
-import { ListProductionsQueryDto } from './dto/list-productions-query.dto';
+import {
+  ListProductionsQueryDto,
+  PRODUCTION_SORT_FIELDS,
+} from './dto/list-productions-query.dto';
 import { ReplaceAssignmentsDto } from './dto/replace-assignments.dto';
 import { ReplaceRunSheetDto } from './dto/replace-run-sheet.dto';
 import { UpdateProductionDto } from './dto/update-production.dto';
+import { resolveOrderBy } from '../common/list-query.util';
 import {
   computeEndTimeDate,
   parseDateString,
@@ -46,6 +50,30 @@ export class ProductionsService {
 
     const where = { userId };
 
+    const defaultOrderBy = [
+      { eventDate: { sort: 'desc' as const, nulls: 'last' as const } },
+      { startTime: { sort: 'desc' as const, nulls: 'last' as const } },
+      { updatedAt: 'desc' as const },
+    ];
+
+    const orderBy = resolveOrderBy(
+      query.sort,
+      query.order,
+      PRODUCTION_SORT_FIELDS,
+      defaultOrderBy,
+      (sort, order) => {
+        if (sort === 'segmentCount') {
+          return [{ runSheetItems: { _count: order } }];
+        }
+
+        if (sort === 'eventDate' || sort === 'startTime' || sort === 'endTime') {
+          return [{ [sort]: { sort: order, nulls: 'last' } }];
+        }
+
+        return undefined;
+      },
+    );
+
     const [productions, total] = await Promise.all([
       this.prisma.production.findMany({
         where,
@@ -55,11 +83,7 @@ export class ProductionsService {
           _count: { select: { runSheetItems: true } },
           runSheetItems: { select: { durationMinutes: true } },
         },
-        orderBy: [
-          { eventDate: { sort: 'desc', nulls: 'last' } },
-          { startTime: { sort: 'desc', nulls: 'last' } },
-          { updatedAt: 'desc' },
-        ],
+        orderBy,
       }),
       this.prisma.production.count({ where }),
     ]);

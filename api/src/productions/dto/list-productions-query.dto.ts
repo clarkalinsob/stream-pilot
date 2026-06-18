@@ -1,17 +1,23 @@
-import { Type } from 'class-transformer';
-import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsIn, IsOptional } from 'class-validator';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import type { SortOrder } from '../../common/list-query.util';
 
-export class ListProductionsQueryDto {
+export const PRODUCTION_SORT_FIELDS = [
+  'title',
+  'eventDate',
+  'startTime',
+  'endTime',
+  'status',
+  'segmentCount',
+] as const;
+export type ProductionSortField = (typeof PRODUCTION_SORT_FIELDS)[number];
+
+export class ListProductionsQueryDto extends PaginationQueryDto {
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page?: number;
+  @IsIn(PRODUCTION_SORT_FIELDS)
+  sort?: ProductionSortField;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(50)
-  limit?: number;
+  @IsIn(['asc', 'desc'])
+  order?: SortOrder;
 }

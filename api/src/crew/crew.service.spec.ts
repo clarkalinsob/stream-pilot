@@ -59,7 +59,11 @@ describe('CrewService', () => {
       const result = await service.findAll(userId, {});
 
       expect(prisma.crewMember.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ skip: 0, take: 10 }),
+        expect.objectContaining({
+          skip: 0,
+          take: 10,
+          orderBy: [{ name: 'asc' }, { updatedAt: 'desc' }],
+        }),
       );
       expect(result.meta).toEqual({
         page: 1,
@@ -68,6 +72,19 @@ describe('CrewService', () => {
         totalPages: 2,
       });
       expect(result.data[0].name).toBe('Alex Rivera');
+    });
+
+    it('sorts crew by an allowed field', async () => {
+      prisma.crewMember.findMany.mockResolvedValue([baseMember]);
+      prisma.crewMember.count.mockResolvedValue(1);
+
+      await service.findAll(userId, { sort: 'role', order: 'desc' });
+
+      expect(prisma.crewMember.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: [{ role: 'desc' }],
+        }),
+      );
     });
   });
 

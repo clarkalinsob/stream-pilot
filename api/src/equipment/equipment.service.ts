@@ -2,8 +2,12 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Equipment } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEquipmentDto } from './dto/create-equipment.dto';
-import { ListEquipmentQueryDto } from './dto/list-equipment-query.dto';
+import {
+  EQUIPMENT_SORT_FIELDS,
+  ListEquipmentQueryDto,
+} from './dto/list-equipment-query.dto';
 import { UpdateEquipmentDto } from './dto/update-equipment.dto';
+import { resolveOrderBy } from '../common/list-query.util';
 import {
   EquipmentDetail,
   PaginatedEquipmentResponse,
@@ -24,13 +28,20 @@ export class EquipmentService {
     const skip = (page - 1) * limit;
     const where = { userId };
 
+    const orderBy = resolveOrderBy(
+      query.sort,
+      query.order,
+      EQUIPMENT_SORT_FIELDS,
+      [{ name: 'asc' }, { updatedAt: 'desc' }],
+    );
+
     const [items, total] = await Promise.all([
       this.prisma.equipment.findMany({
         where,
         skip,
         take: limit,
         include: { _count: { select: { assignments: true } } },
-        orderBy: [{ name: 'asc' }, { updatedAt: 'desc' }],
+        orderBy,
       }),
       this.prisma.equipment.count({ where }),
     ]);

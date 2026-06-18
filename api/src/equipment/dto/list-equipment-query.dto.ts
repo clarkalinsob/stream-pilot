@@ -1,17 +1,16 @@
-import { Type } from 'class-transformer';
-import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsIn, IsOptional } from 'class-validator';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import type { SortOrder } from '../../common/list-query.util';
 
-export class ListEquipmentQueryDto {
+export const EQUIPMENT_SORT_FIELDS = ['name', 'category', 'quantity'] as const;
+export type EquipmentSortField = (typeof EQUIPMENT_SORT_FIELDS)[number];
+
+export class ListEquipmentQueryDto extends PaginationQueryDto {
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page?: number;
+  @IsIn(EQUIPMENT_SORT_FIELDS)
+  sort?: EquipmentSortField;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(50)
-  limit?: number;
+  @IsIn(['asc', 'desc'])
+  order?: SortOrder;
 }

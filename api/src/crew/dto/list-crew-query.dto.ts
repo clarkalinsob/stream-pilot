@@ -1,17 +1,16 @@
-import { Type } from 'class-transformer';
-import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsIn, IsOptional } from 'class-validator';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import type { SortOrder } from '../../common/list-query.util';
 
-export class ListCrewQueryDto {
+export const CREW_SORT_FIELDS = ['name', 'role', 'email', 'phone'] as const;
+export type CrewSortField = (typeof CREW_SORT_FIELDS)[number];
+
+export class ListCrewQueryDto extends PaginationQueryDto {
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page?: number;
+  @IsIn(CREW_SORT_FIELDS)
+  sort?: CrewSortField;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(50)
-  limit?: number;
+  @IsIn(['asc', 'desc'])
+  order?: SortOrder;
 }
