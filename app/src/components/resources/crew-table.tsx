@@ -10,6 +10,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DataTable } from '@/components/shared/data-table';
+import {
+  createSortableHeader,
+  type DataTableSortState,
+} from '@/components/shared/data-table-sort';
 import { CrewRoleBadge } from './crew-role-badge';
 import type { CrewMemberSummary } from '@/types/crew';
 
@@ -25,17 +29,17 @@ export function createCrewColumns(actions: {
   return [
     {
       accessorKey: 'name',
-      header: 'Name',
+      header: createSortableHeader('Name', 'name'),
       cell: ({ row }) => row.original.name,
     },
     {
       accessorKey: 'role',
-      header: 'Role',
+      header: createSortableHeader('Role', 'role'),
       cell: ({ row }) => <CrewRoleBadge role={row.original.role} size="sm" />,
     },
     {
       accessorKey: 'email',
-      header: 'Email',
+      header: createSortableHeader('Email', 'email'),
       cell: ({ row }) => (
         <span className="text-muted-foreground">
           {truncate(row.original.email)}
@@ -44,7 +48,7 @@ export function createCrewColumns(actions: {
     },
     {
       accessorKey: 'phone',
-      header: 'Phone',
+      header: createSortableHeader('Phone', 'phone'),
       cell: ({ row }) => (
         <span className="text-muted-foreground">
           {truncate(row.original.phone)}
@@ -82,6 +86,7 @@ export function createCrewColumns(actions: {
 type CrewTableProps = {
   data: CrewMemberSummary[];
   isLoading?: boolean;
+  sort?: DataTableSortState;
   onRowClick: (member: CrewMemberSummary) => void;
   onEdit: (member: CrewMemberSummary) => void;
   onDelete: (member: CrewMemberSummary) => void;
@@ -90,6 +95,7 @@ type CrewTableProps = {
 export function CrewTable({
   data,
   isLoading,
+  sort,
   onRowClick,
   onEdit,
   onDelete,
@@ -101,6 +107,7 @@ export function CrewTable({
       columns={columns}
       data={data}
       isLoading={isLoading}
+      sort={sort}
       onRowClick={onRowClick}
     />
   );

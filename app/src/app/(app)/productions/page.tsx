@@ -10,7 +10,7 @@ import { ErrorAlert } from '@/components/shared/error-alert';
 import { PageHeader } from '@/components/shared/page-header';
 import { PaginatedFooter } from '@/components/shared/paginated-footer';
 import { ProductionsTable } from '@/components/productions/productions-table';
-import { usePagination } from '@/hooks/use-pagination';
+import { useListQuery } from '@/hooks/use-list-query';
 import { useProductionsStore } from '@/stores/productions-store';
 import type {
   ProductionStatus,
@@ -27,7 +27,8 @@ export default function ProductionsPage() {
 
 function ProductionsPageContent() {
   const router = useRouter();
-  const { page, setPage, limit } = usePagination();
+  const { queryParams, setPage, sort, order, defaultSort, defaultOrder, setSort } =
+    useListQuery({ defaultSort: 'eventDate', defaultOrder: 'desc' });
   const {
     productions,
     pagination,
@@ -45,14 +46,22 @@ function ProductionsPageContent() {
   );
 
   useEffect(() => {
-    fetchProductions({ page, limit });
-  }, [fetchProductions, page, limit]);
+    fetchProductions(queryParams);
+  }, [fetchProductions, queryParams]);
+
+  const tableSort = {
+    sort,
+    order,
+    defaultSort,
+    defaultOrder,
+    onSort: setSort,
+  };
 
   async function handleDelete() {
     if (!deleteTarget) return;
-    const nextPage = await deleteProduction(deleteTarget.id, page);
+    const nextPage = await deleteProduction(deleteTarget.id, queryParams.page);
     setDeleteTarget(null);
-    if (nextPage !== page) setPage(nextPage);
+    if (nextPage !== queryParams.page) setPage(nextPage);
   }
 
   async function handleStatusChange(
@@ -93,6 +102,7 @@ function ProductionsPageContent() {
           <ProductionsTable
             data={productions}
             isLoading={isLoading}
+            sort={tableSort}
             onRowClick={(id) => router.push(`/productions/${id}`)}
             onStatusChange={handleStatusChange}
             onDelete={setDeleteTarget}

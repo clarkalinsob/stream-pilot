@@ -18,7 +18,7 @@ import type { EquipmentFormValues } from '@/components/resources/equipment-form-
 import { EquipmentTable } from '@/components/resources/equipment-table';
 import { getCrewMember } from '@/lib/crew';
 import { getEquipmentItem } from '@/lib/equipment';
-import { usePagination } from '@/hooks/use-pagination';
+import { useListQuery } from '@/hooks/use-list-query';
 import { useCrewStore } from '@/stores/crew-store';
 import { useEquipmentStore } from '@/stores/equipment-store';
 import type { CrewMemberSummary } from '@/types/crew';
@@ -36,7 +36,16 @@ export default function ResourcesPage() {
 
 function ResourcesPageContent() {
   const pathname = usePathname();
-  const { page, setPage, limit } = usePagination();
+  const {
+    queryParams,
+    setPage,
+    sort,
+    order,
+    defaultSort,
+    defaultOrder,
+    setSort,
+    clearSort,
+  } = useListQuery({ defaultSort: 'name', defaultOrder: 'asc' });
   const [tab, setTab] = useState<ResourceTab>('crew');
 
   const {
@@ -94,25 +103,33 @@ function ResourcesPageContent() {
     void fetchEquipmentTotal();
 
     if (tab === 'crew') {
-      void fetchCrew({ page, limit });
+      void fetchCrew(queryParams);
       return;
     }
 
-    void fetchEquipment({ page, limit });
+    void fetchEquipment(queryParams);
   }, [
     pathname,
     tab,
-    page,
-    limit,
+    queryParams,
     fetchCrew,
     fetchCrewTotal,
     fetchEquipment,
     fetchEquipmentTotal,
   ]);
 
+  const tableSort = {
+    sort,
+    order,
+    defaultSort,
+    defaultOrder,
+    onSort: setSort,
+  };
+
   function handleTabChange(value: string) {
     setTab(value as ResourceTab);
     setPage(1);
+    clearSort();
   }
 
   async function openCrewEdit(member: CrewMemberSummary) {
@@ -187,16 +204,19 @@ function ResourcesPageContent() {
 
   async function handleDeleteCrew() {
     if (!deleteCrewTarget) return;
-    const nextPage = await deleteCrewMember(deleteCrewTarget.id, page);
+    const nextPage = await deleteCrewMember(deleteCrewTarget.id, queryParams.page);
     setDeleteCrewTarget(null);
-    if (nextPage !== page) setPage(nextPage);
+    if (nextPage !== queryParams.page) setPage(nextPage);
   }
 
   async function handleDeleteEquipment() {
     if (!deleteEquipmentTarget) return;
-    const nextPage = await deleteEquipment(deleteEquipmentTarget.id, page);
+    const nextPage = await deleteEquipment(
+      deleteEquipmentTarget.id,
+      queryParams.page,
+    );
     setDeleteEquipmentTarget(null);
-    if (nextPage !== page) setPage(nextPage);
+    if (nextPage !== queryParams.page) setPage(nextPage);
   }
 
   const activePagination = tab === 'crew' ? crewPagination : equipmentPagination;
@@ -249,6 +269,7 @@ function ResourcesPageContent() {
               <CrewTable
                 data={crew}
                 isLoading={crewLoading}
+                sort={tableSort}
                 onRowClick={openCrewEdit}
                 onEdit={openCrewEdit}
                 onDelete={setDeleteCrewTarget}
@@ -281,6 +302,7 @@ function ResourcesPageContent() {
               <EquipmentTable
                 data={equipment}
                 isLoading={equipmentLoading}
+                sort={tableSort}
                 onRowClick={openEquipmentEdit}
                 onEdit={openEquipmentEdit}
                 onDelete={setDeleteEquipmentTarget}

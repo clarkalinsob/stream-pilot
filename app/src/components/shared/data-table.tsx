@@ -7,6 +7,10 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import {
+  DataTableSortProvider,
+  type DataTableSortState,
+} from '@/components/shared/data-table-sort';
+import {
   Table,
   TableBody,
   TableCell,
@@ -24,6 +28,7 @@ type DataTableProps<TData> = {
   isLoading?: boolean;
   skeletonRowCount?: number;
   className?: string;
+  sort?: DataTableSortState;
 };
 
 export function DataTable<TData>({
@@ -33,6 +38,7 @@ export function DataTable<TData>({
   isLoading = false,
   skeletonRowCount = 5,
   className,
+  sort,
 }: DataTableProps<TData>) {
   const table = useReactTable({
     data,
@@ -41,8 +47,9 @@ export function DataTable<TData>({
   });
 
   return (
-    <div className={cn('rounded-md border', className)}>
-      <Table>
+    <DataTableSortProvider value={sort ?? null}>
+      <div className={cn('rounded-md border', className)}>
+        <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
@@ -101,5 +108,6 @@ export function DataTable<TData>({
         </TableBody>
       </Table>
     </div>
+    </DataTableSortProvider>
   );
 }

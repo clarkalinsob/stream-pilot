@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import * as crewApi from '@/lib/crew';
 import { ApiError } from '@/lib/api';
+import type { ListQueryParams } from '@/lib/list-query';
 import { singleFlight } from '@/lib/single-flight';
 import type {
   CreateCrewMemberData,
@@ -10,10 +11,7 @@ import type {
 } from '@/types/crew';
 import type { PaginationMeta } from '@/types/production';
 
-type FetchCrewParams = {
-  page?: number;
-  limit?: number;
-};
+type FetchCrewParams = ListQueryParams;
 
 type CrewState = {
   crew: CrewMemberSummary[];
@@ -34,6 +32,7 @@ type CrewState = {
 };
 
 let crewListRequestId = 0;
+let lastCrewFetchParams: FetchCrewParams = { page: 1, limit: 10 };
 
 export const useCrewStore = create<CrewState>((set, get) => {
   const createCrewMember = singleFlight(async (data: CreateCrewMemberData) => {
@@ -92,7 +91,7 @@ export const useCrewStore = create<CrewState>((set, get) => {
         const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
         const pageToFetch =
           currentPage > totalPages && totalPages > 0 ? totalPages : currentPage;
-        await get().fetchCrew({ page: pageToFetch, limit });
+        await get().fetchCrew({ ...lastCrewFetchParams, page: pageToFetch });
         set({ isSaving: false });
         return pageToFetch;
       } catch (err) {
@@ -121,11 +120,13 @@ export const useCrewStore = create<CrewState>((set, get) => {
     }
   },
 
-  fetchCrew: async ({ page = 1, limit = 10 } = {}) => {
+  fetchCrew: async (params = {}) => {
     const requestId = ++crewListRequestId;
+    const query = { ...lastCrewFetchParams, ...params };
+    lastCrewFetchParams = query;
     set({ isLoading: true, error: null });
     try {
-      const result = await crewApi.listCrew({ page, limit });
+      const result = await crewApi.listCrew(query);
       if (requestId !== crewListRequestId) return;
       set({
         crew: result.data,

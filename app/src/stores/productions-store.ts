@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import * as productionsApi from '@/lib/productions';
 import { ApiError } from '@/lib/api';
+import type { ListQueryParams } from '@/lib/list-query';
 import { singleFlight } from '@/lib/single-flight';
 import type {
   CreateProductionData,
@@ -12,10 +13,7 @@ import type {
   UpdateProductionData,
 } from '@/types/production';
 
-type FetchProductionsParams = {
-  page?: number;
-  limit?: number;
-};
+type FetchProductionsParams = ListQueryParams;
 
 type ProductionsState = {
   productions: ProductionSummary[];
@@ -45,6 +43,8 @@ type ProductionsState = {
 };
 
 export const useProductionsStore = create<ProductionsState>((set, get) => {
+  let lastProductionsFetchParams: FetchProductionsParams = { page: 1, limit: 10 };
+
   const createProduction = singleFlight(async (data: CreateProductionData) => {
     set({ isSaving: true, error: null });
     try {
@@ -137,7 +137,10 @@ export const useProductionsStore = create<ProductionsState>((set, get) => {
         const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
         const pageToFetch =
           currentPage > totalPages && totalPages > 0 ? totalPages : currentPage;
-        await get().fetchProductions({ page: pageToFetch, limit });
+        await get().fetchProductions({
+          ...lastProductionsFetchParams,
+          page: pageToFetch,
+        });
         set({ isSaving: false, current: null });
         return pageToFetch;
       } catch (err) {
@@ -157,10 +160,12 @@ export const useProductionsStore = create<ProductionsState>((set, get) => {
   isSaving: false,
   error: null,
 
-  fetchProductions: async ({ page = 1, limit = 10 } = {}) => {
+  fetchProductions: async (params = {}) => {
+    const query = { ...lastProductionsFetchParams, ...params };
+    lastProductionsFetchParams = query;
     set({ isLoading: true, error: null });
     try {
-      const result = await productionsApi.listProductions({ page, limit });
+      const result = await productionsApi.listProductions(query);
       set({
         productions: result.data,
         pagination: result.meta,

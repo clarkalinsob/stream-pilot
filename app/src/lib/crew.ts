@@ -1,4 +1,5 @@
 import { apiFetch } from './api';
+import { buildListQueryString, type ListQueryParams } from './list-query';
 import type {
   CreateCrewMemberData,
   CrewMemberDetail,
@@ -6,17 +7,10 @@ import type {
   UpdateCrewMemberData,
 } from '@/types/crew';
 
-type ListParams = {
-  page?: number;
-  limit?: number;
-};
-
-export function listCrew({ page = 1, limit = 10 }: ListParams = {}) {
-  const params = new URLSearchParams({
-    page: String(page),
-    limit: String(limit),
+export function listCrew(params: ListQueryParams = {}) {
+  return apiFetch<PaginatedCrew>(`/crew?${buildListQueryString(params)}`, {
+    requireSession: true,
   });
-  return apiFetch<PaginatedCrew>(`/crew?${params}`, { requireSession: true });
 }
 
 export function getCrewMember(id: string) {

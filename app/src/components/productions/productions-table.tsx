@@ -12,6 +12,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { DataTable } from '@/components/shared/data-table';
 import {
+  createSortableHeader,
+  type DataTableSortState,
+} from '@/components/shared/data-table-sort';
+import {
   formatDuration,
   formatEventDate,
   formatTimeValue,
@@ -35,32 +39,32 @@ export function createProductionColumns(actions: {
   return [
     {
       accessorKey: 'title',
-      header: 'Title',
+      header: createSortableHeader('Title', 'title'),
       cell: ({ row }) => row.original.title,
     },
     {
       accessorKey: 'eventDate',
-      header: 'Event Date',
+      header: createSortableHeader('Event Date', 'eventDate'),
       cell: ({ row }) => formatEventDate(row.original.eventDate),
     },
     {
       id: 'startTime',
-      header: 'Start Time',
+      header: createSortableHeader('Start Time', 'startTime'),
       cell: ({ row }) => formatTimeValue(row.original.startTime),
     },
     {
       id: 'endTime',
-      header: 'End Time',
+      header: createSortableHeader('End Time', 'endTime'),
       cell: ({ row }) => formatTimeValue(row.original.endTime),
     },
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: createSortableHeader('Status', 'status'),
       cell: ({ row }) => <ProductionStatusBadge status={row.original.status} />,
     },
     {
       accessorKey: 'segmentCount',
-      header: 'Segments',
+      header: createSortableHeader('Segments', 'segmentCount'),
     },
     {
       accessorKey: 'totalDurationMinutes',
@@ -111,6 +115,7 @@ export function createProductionColumns(actions: {
 type ProductionsTableProps = {
   data: ProductionSummary[];
   isLoading?: boolean;
+  sort?: DataTableSortState;
   onRowClick: (id: string) => void;
   onStatusChange: (
     production: ProductionSummary,
@@ -122,6 +127,7 @@ type ProductionsTableProps = {
 export function ProductionsTable({
   data,
   isLoading,
+  sort,
   onRowClick,
   onStatusChange,
   onDelete,
@@ -137,6 +143,7 @@ export function ProductionsTable({
       columns={columns}
       data={data}
       isLoading={isLoading}
+      sort={sort}
       onRowClick={(row) => onRowClick(row.id)}
     />
   );

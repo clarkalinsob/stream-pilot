@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import * as equipmentApi from '@/lib/equipment';
 import { ApiError } from '@/lib/api';
+import type { ListQueryParams } from '@/lib/list-query';
 import { singleFlight } from '@/lib/single-flight';
 import type {
   CreateEquipmentData,
@@ -10,10 +11,7 @@ import type {
 } from '@/types/equipment';
 import type { PaginationMeta } from '@/types/production';
 
-type FetchEquipmentParams = {
-  page?: number;
-  limit?: number;
-};
+type FetchEquipmentParams = ListQueryParams;
 
 type EquipmentState = {
   equipment: EquipmentSummary[];
@@ -34,6 +32,7 @@ type EquipmentState = {
 };
 
 let equipmentListRequestId = 0;
+let lastEquipmentFetchParams: FetchEquipmentParams = { page: 1, limit: 10 };
 
 export const useEquipmentStore = create<EquipmentState>((set, get) => {
   const createEquipment = singleFlight(async (data: CreateEquipmentData) => {
@@ -91,7 +90,7 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => {
         const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
         const pageToFetch =
           currentPage > totalPages && totalPages > 0 ? totalPages : currentPage;
-        await get().fetchEquipment({ page: pageToFetch, limit });
+        await get().fetchEquipment({ ...lastEquipmentFetchParams, page: pageToFetch });
         set({ isSaving: false });
         return pageToFetch;
       } catch (err) {
@@ -120,11 +119,13 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => {
     }
   },
 
-  fetchEquipment: async ({ page = 1, limit = 10 } = {}) => {
+  fetchEquipment: async (params = {}) => {
     const requestId = ++equipmentListRequestId;
+    const query = { ...lastEquipmentFetchParams, ...params };
+    lastEquipmentFetchParams = query;
     set({ isLoading: true, error: null });
     try {
-      const result = await equipmentApi.listEquipment({ page, limit });
+      const result = await equipmentApi.listEquipment(query);
       if (requestId !== equipmentListRequestId) return;
       set({
         equipment: result.data,

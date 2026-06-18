@@ -1,4 +1,5 @@
 import { apiFetch } from './api';
+import { buildListQueryString, type ListQueryParams } from './list-query';
 import type {
   CreateEquipmentData,
   EquipmentDetail,
@@ -6,19 +7,11 @@ import type {
   UpdateEquipmentData,
 } from '@/types/equipment';
 
-type ListParams = {
-  page?: number;
-  limit?: number;
-};
-
-export function listEquipment({ page = 1, limit = 10 }: ListParams = {}) {
-  const params = new URLSearchParams({
-    page: String(page),
-    limit: String(limit),
-  });
-  return apiFetch<PaginatedEquipment>(`/equipment?${params}`, {
-    requireSession: true,
-  });
+export function listEquipment(params: ListQueryParams = {}) {
+  return apiFetch<PaginatedEquipment>(
+    `/equipment?${buildListQueryString(params)}`,
+    { requireSession: true },
+  );
 }
 
 export function getEquipmentItem(id: string) {

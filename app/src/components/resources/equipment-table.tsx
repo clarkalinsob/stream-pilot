@@ -10,6 +10,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DataTable } from '@/components/shared/data-table';
+import {
+  createSortableHeader,
+  type DataTableSortState,
+} from '@/components/shared/data-table-sort';
 import { EquipmentCategoryBadge } from './equipment-category-badge';
 import type { EquipmentSummary } from '@/types/equipment';
 
@@ -20,19 +24,19 @@ export function createEquipmentColumns(actions: {
   return [
     {
       accessorKey: 'name',
-      header: 'Name',
+      header: createSortableHeader('Name', 'name'),
       cell: ({ row }) => row.original.name,
     },
     {
       accessorKey: 'category',
-      header: 'Category',
+      header: createSortableHeader('Category', 'category'),
       cell: ({ row }) => (
         <EquipmentCategoryBadge category={row.original.category} size="sm" />
       ),
     },
     {
       accessorKey: 'quantity',
-      header: 'Quantity',
+      header: createSortableHeader('Quantity', 'quantity'),
     },
     {
       id: 'actions',
@@ -65,6 +69,7 @@ export function createEquipmentColumns(actions: {
 type EquipmentTableProps = {
   data: EquipmentSummary[];
   isLoading?: boolean;
+  sort?: DataTableSortState;
   onRowClick: (item: EquipmentSummary) => void;
   onEdit: (item: EquipmentSummary) => void;
   onDelete: (item: EquipmentSummary) => void;
@@ -73,6 +78,7 @@ type EquipmentTableProps = {
 export function EquipmentTable({
   data,
   isLoading,
+  sort,
   onRowClick,
   onEdit,
   onDelete,
@@ -84,6 +90,7 @@ export function EquipmentTable({
       columns={columns}
       data={data}
       isLoading={isLoading}
+      sort={sort}
       onRowClick={onRowClick}
     />
   );

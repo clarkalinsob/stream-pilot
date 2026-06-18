@@ -1,4 +1,5 @@
 import { apiFetch } from './api';
+import { buildListQueryString, type ListQueryParams } from './list-query';
 import type {
   CreateProductionData,
   PaginatedProductions,
@@ -8,19 +9,11 @@ import type {
   RunSheetItem,
 } from '@/types/production';
 
-type ListParams = {
-  page?: number;
-  limit?: number;
-};
-
-export function listProductions({ page = 1, limit = 10 }: ListParams = {}) {
-  const params = new URLSearchParams({
-    page: String(page),
-    limit: String(limit),
-  });
-  return apiFetch<PaginatedProductions>(`/productions?${params}`, {
-    requireSession: true,
-  });
+export function listProductions(params: ListQueryParams = {}) {
+  return apiFetch<PaginatedProductions>(
+    `/productions?${buildListQueryString(params)}`,
+    { requireSession: true },
+  );
 }
 
 export function getProduction(id: string) {
