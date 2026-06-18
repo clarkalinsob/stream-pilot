@@ -7,7 +7,7 @@ import {
   ListEquipmentQueryDto,
 } from './dto/list-equipment-query.dto';
 import { UpdateEquipmentDto } from './dto/update-equipment.dto';
-import { resolveOrderBy } from '../common/list-query.util';
+import { resolveOrderBy, buildTextSearchFilter } from '../common/list-query.util';
 import {
   EquipmentDetail,
   PaginatedEquipmentResponse,
@@ -26,7 +26,10 @@ export class EquipmentService {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
-    const where = { userId };
+    const where = {
+      userId,
+      ...buildTextSearchFilter(query.search, ['name']),
+    };
 
     const orderBy = resolveOrderBy(
       query.sort,

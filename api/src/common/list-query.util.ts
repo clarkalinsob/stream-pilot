@@ -21,3 +21,19 @@ export function resolveOrderBy<T extends string>(
 
   return defaultOrderBy;
 }
+
+export function buildTextSearchFilter(
+  search: string | undefined,
+  fields: readonly string[],
+): { OR: Array<Record<string, { contains: string; mode: 'insensitive' }>> } | undefined {
+  const term = search?.trim();
+  if (!term) {
+    return undefined;
+  }
+
+  return {
+    OR: fields.map((field) => ({
+      [field]: { contains: term, mode: 'insensitive' as const },
+    })),
+  };
+}

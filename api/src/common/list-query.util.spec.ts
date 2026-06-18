@@ -1,4 +1,4 @@
-import { resolveOrderBy } from './list-query.util';
+import { resolveOrderBy, buildTextSearchFilter } from './list-query.util';
 
 describe('resolveOrderBy', () => {
   const allowed = ['name', 'role'] as const;
@@ -31,5 +31,20 @@ describe('resolveOrderBy', () => {
         return undefined;
       }),
     ).toEqual([{ name: 'asc' }, { updatedAt: 'desc' }]);
+  });
+});
+
+describe('buildTextSearchFilter', () => {
+  it('returns undefined for blank search', () => {
+    expect(buildTextSearchFilter('   ', ['name'])).toBeUndefined();
+  });
+
+  it('builds OR filters for searchable fields', () => {
+    expect(buildTextSearchFilter('alex', ['name', 'email'])).toEqual({
+      OR: [
+        { name: { contains: 'alex', mode: 'insensitive' } },
+        { email: { contains: 'alex', mode: 'insensitive' } },
+      ],
+    });
   });
 });

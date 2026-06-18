@@ -86,6 +86,26 @@ describe('CrewService', () => {
         }),
       );
     });
+
+    it('filters crew by search term', async () => {
+      prisma.crewMember.findMany.mockResolvedValue([baseMember]);
+      prisma.crewMember.count.mockResolvedValue(1);
+
+      await service.findAll(userId, { search: 'alex' });
+
+      expect(prisma.crewMember.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId,
+            OR: [
+              { name: { contains: 'alex', mode: 'insensitive' } },
+              { email: { contains: 'alex', mode: 'insensitive' } },
+              { phone: { contains: 'alex', mode: 'insensitive' } },
+            ],
+          }),
+        }),
+      );
+    });
   });
 
   describe('findOne', () => {

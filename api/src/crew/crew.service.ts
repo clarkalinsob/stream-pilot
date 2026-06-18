@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateCrewMemberDto } from './dto/create-crew-member.dto';
 import { CREW_SORT_FIELDS, ListCrewQueryDto } from './dto/list-crew-query.dto';
 import { UpdateCrewMemberDto } from './dto/update-crew-member.dto';
-import { resolveOrderBy } from '../common/list-query.util';
+import { resolveOrderBy, buildTextSearchFilter } from '../common/list-query.util';
 import {
   CrewMemberDetail,
   PaginatedCrewResponse,
@@ -23,7 +23,10 @@ export class CrewService {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
-    const where = { userId };
+    const where = {
+      userId,
+      ...buildTextSearchFilter(query.search, ['name', 'email', 'phone']),
+    };
 
     const orderBy = resolveOrderBy(
       query.sort,

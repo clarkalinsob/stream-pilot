@@ -1,5 +1,5 @@
 import { IsIn, IsOptional } from 'class-validator';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { ListSearchQueryDto } from '../../common/dto/list-search-query.dto';
 import type { SortOrder } from '../../common/list-query.util';
 
 export const PRODUCTION_SORT_FIELDS = [
@@ -12,7 +12,7 @@ export const PRODUCTION_SORT_FIELDS = [
 ] as const;
 export type ProductionSortField = (typeof PRODUCTION_SORT_FIELDS)[number];
 
-export class ListProductionsQueryDto extends PaginationQueryDto {
+export class ListProductionsQueryDto extends ListSearchQueryDto {
   @IsOptional()
   @IsIn(PRODUCTION_SORT_FIELDS)
   sort?: ProductionSortField;

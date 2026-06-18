@@ -14,7 +14,7 @@ import {
 import { ReplaceAssignmentsDto } from './dto/replace-assignments.dto';
 import { ReplaceRunSheetDto } from './dto/replace-run-sheet.dto';
 import { UpdateProductionDto } from './dto/update-production.dto';
-import { resolveOrderBy } from '../common/list-query.util';
+import { resolveOrderBy, buildTextSearchFilter } from '../common/list-query.util';
 import {
   computeEndTimeDate,
   parseDateString,
@@ -48,7 +48,10 @@ export class ProductionsService {
     const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
 
-    const where = { userId };
+    const where = {
+      userId,
+      ...buildTextSearchFilter(query.search, ['title', 'description']),
+    };
 
     const defaultOrderBy = [
       { eventDate: { sort: 'desc' as const, nulls: 'last' as const } },
