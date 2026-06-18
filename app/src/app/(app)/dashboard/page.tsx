@@ -90,6 +90,11 @@ export default function DashboardPage() {
                 value={formatKpiValue(stats?.productions.byStatus.SCHEDULED)}
                 icon={Calendar}
                 href="/productions"
+                statusHighlight={
+                  (stats?.productions.byStatus.SCHEDULED ?? 0) > 0
+                    ? 'SCHEDULED'
+                    : undefined
+                }
               />
               <StatCard
                 label="Crew members"

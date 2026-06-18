@@ -156,7 +156,7 @@ export function HeaderNotifications() {
         >
           <Bell className="size-5" />
           {count > 0 ? (
-            <span className="absolute right-1 top-1 flex size-4 min-w-4 items-center justify-center rounded-full bg-destructive px-0.5 text-[10px] font-medium leading-none text-white">
+            <span className="absolute right-1 top-1 flex size-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-0.5 text-[10px] font-medium leading-none text-white">
               {count > 9 ? '9+' : count}
             </span>
           ) : null}

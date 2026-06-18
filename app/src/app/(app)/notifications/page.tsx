@@ -162,7 +162,7 @@ function NotificationsPageContent() {
                     <div className="flex min-w-0 flex-1 items-center gap-2">
                       <span className="font-medium">{notification.title}</span>
                       {!notification.read ? (
-                        <span className="size-2 shrink-0 rounded-full bg-primary" />
+                        <span className="size-2 shrink-0 rounded-full bg-red-500" />
                       ) : null}
                     </div>
                     <span className="shrink-0 text-xs text-muted-foreground whitespace-nowrap">
