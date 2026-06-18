@@ -1,0 +1,1195 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Stream Pilot API",
+    "description": "Stream Pilot NestJS API — health, auth (JWT cookie), dashboard analytics, productions + run sheets, crew/equipment resources, and push notifications.\n\n## Setup\n1. Import `stream-pilot.postman_environment.json` (optional) or use collection variables.\n2. Set `baseUrl` to `http://localhost:3001` (direct API) or `http://localhost:3000/api` (via Next.js proxy).\n3. Run **Auth → Register** or **Auth → Login** first — Postman stores the `token` httpOnly cookie automatically.\n4. Run **Dashboard → Get Stats** to fetch pipeline analytics.\n5. Run **Productions → Create Production** — saves `productionId` to collection variables. Requires `eventDate`, `startTime`, and `startsAt` (ISO 8601).\n6. Run **Crew → Create Crew Member** and **Equipment → Create Equipment** — saves `crewMemberId` and `equipmentId`.\n7. Run **Assignments → Replace Assignments** — assigns crew and equipment to the production.\n8. Run **Notifications → Get VAPID Public Key** and **Subscribe** to register a push endpoint.\n9. Run **Productions → Update Production** with `\"status\": \"SCHEDULED\"` to create an inbox notification; check **Notifications → List Notifications** and **Unread Count**.\n\n## Auth\nProtected routes require the `token` cookie set by register/login. Postman Cookie Jar must be enabled (default).\n\n## List endpoints\nProductions, crew, and equipment list routes support optional `search`, `sort`, and `order` query params (see each request for allowed sort fields).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001"
+    },
+    {
+      "key": "productionId",
+      "value": ""
+    },
+    {
+      "key": "crewMemberId",
+      "value": ""
+    },
+    {
+      "key": "equipmentId",
+      "value": ""
+    },
+    {
+      "key": "notificationId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "API Root",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Public. Returns API name string."
+          },
+          "response": []
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Public. Returns `{ status: 'ok', db: 'connected' }`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns dashboard stats', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('productions');",
+                  "    pm.expect(json.productions).to.have.property('total');",
+                  "    pm.expect(json.productions).to.have.property('byStatus');",
+                  "    pm.expect(json).to.have.property('crew');",
+                  "    pm.expect(json.crew).to.have.property('unassigned');",
+                  "    pm.expect(json.crew).to.have.property('topBooked');",
+                  "    pm.expect(json).to.have.property('equipment');",
+                  "    pm.expect(json.equipment).to.have.property('unassigned');",
+                  "    pm.expect(json.equipment).to.have.property('topBooked');",
+                  "    pm.expect(json).to.have.property('runSheet');",
+                  "    pm.expect(json).to.have.property('upcomingProductions');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "stats"]
+            },
+            "description": "Protected. Returns aggregated dashboard analytics: production counts by status, crew/equipment totals, run sheet totals, upcoming productions, and top booked crew."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 or 200', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('Returns user', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.user).to.have.property('id');",
+                  "    pm.expect(json.user).to.have.property('email');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\",\n  \"email\": \"jane@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Public. Creates a user and sets the `token` httpOnly cookie. Password must be at least 8 characters."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 or 200', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('Returns user', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.user).to.have.property('id');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jane@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Public. Authenticates and sets the `token` httpOnly cookie."
+          },
+          "response": []
+        },
+        {
+          "name": "Me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns current user', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.user).to.have.property('email');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Protected. Returns the authenticated user. Requires `token` cookie."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Public route but clears the `token` cookie when called. Returns `{ ok: true }`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Productions",
+      "item": [
+        {
+          "name": "List Productions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns paginated envelope', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('data');",
+                  "    pm.expect(json).to.have.property('meta');",
+                  "    pm.expect(json.data).to.be.an('array');",
+                  "    pm.expect(json.meta).to.have.property('total');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/productions?page=1&limit=10&search=&sort=eventDate&order=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["productions"],
+              "query": [
+                { "key": "page", "value": "1", "description": "Page number (default 1)" },
+                { "key": "limit", "value": "10", "description": "Page size, max 50 (default 10)" },
+                { "key": "search", "value": "", "description": "Optional text search on title and description", "disabled": true },
+                { "key": "sort", "value": "eventDate", "description": "title | eventDate | startTime | endTime | status | segmentCount", "disabled": true },
+                { "key": "order", "value": "desc", "description": "asc | desc", "disabled": true }
+              ]
+            },
+            "description": "Protected. Lists productions for the authenticated user (paginated) with segmentCount and totalDurationMinutes. Supports optional search, sort, and order."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Production",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 or 200', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    pm.collectionVariables.set('productionId', json.id);",
+                  "    pm.test('Has run sheet items', function () {",
+                  "        pm.expect(json.runSheetItems).to.be.an('array').that.is.not.empty;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Friday Night Stream\",\n  \"description\": \"Weekly live show\",\n  \"eventDate\": \"2026-06-20\",\n  \"startTime\": \"19:00\",\n  \"startsAt\": \"2026-06-20T19:00:00.000Z\",\n  \"runSheetItems\": [\n    {\n      \"title\": \"Cold open\",\n      \"durationMinutes\": 5,\n      \"notes\": \"Host intro\"\n    },\n    {\n      \"title\": \"Main segment\",\n      \"durationMinutes\": 45\n    },\n    {\n      \"title\": \"Outro\",\n      \"durationMinutes\": 5\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/productions",
+              "host": ["{{baseUrl}}"],
+              "path": ["productions"]
+            },
+            "description": "Protected. Creates a production with nested run sheet items in a single transaction. Requires `eventDate` (YYYY-MM-DD), `startTime` (HH:mm), and `startsAt` (ISO 8601 UTC). Saves `productionId` to collection variables."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Production",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Has run sheet items', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.runSheetItems).to.be.an('array');",
+                  "    pm.expect(json.crewAssignments).to.be.an('array');",
+                  "    pm.expect(json.equipmentAssignments).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/productions/{{productionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["productions", "{{productionId}}"]
+            },
+            "description": "Protected. Returns production detail with ordered run sheet items, crew assignments, and equipment assignments. Returns 404 if not found or not owned."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Production",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Friday Night Stream (Updated)\",\n  \"description\": \"Updated description\",\n  \"eventDate\": \"2026-06-20\",\n  \"startTime\": \"19:00\",\n  \"startsAt\": \"2026-06-20T19:00:00.000Z\",\n  \"status\": \"SCHEDULED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/productions/{{productionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["productions", "{{productionId}}"]
+            },
+            "description": "Protected. Updates production metadata, schedule, and/or status. All fields optional. Status values: `DRAFT`, `SCHEDULED`, `COMPLETED`. Changing status to `SCHEDULED` creates an inbox notification."
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Run Sheet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Run sheet replaced', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.runSheetItems[0].title).to.eql('New intro');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"title\": \"New intro\",\n      \"durationMinutes\": 10,\n      \"notes\": \"Updated segment order\"\n    },\n    {\n      \"title\": \"Interview block\",\n      \"durationMinutes\": 30\n    },\n    {\n      \"title\": \"Closing\",\n      \"durationMinutes\": 5\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/productions/{{productionId}}/run-sheet",
+              "host": ["{{baseUrl}}"],
+              "path": ["productions", "{{productionId}}", "run-sheet"]
+            },
+            "description": "Protected. Replaces all run sheet items for a production (delete + recreate in transaction)."
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Assignments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Has crew and equipment assignments', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.crewAssignments).to.be.an('array');",
+                  "    pm.expect(json.equipmentAssignments).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"crewMemberIds\": [\"{{crewMemberId}}\"],\n  \"equipment\": [\n    {\n      \"equipmentId\": \"{{equipmentId}}\",\n      \"quantity\": 1\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/productions/{{productionId}}/assignments",
+              "host": ["{{baseUrl}}"],
+              "path": ["productions", "{{productionId}}", "assignments"]
+            },
+            "description": "Protected. Replaces all crew and equipment assignments for a production. Returns updated production detail."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Production",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns ok', function () {",
+                  "    pm.expect(pm.response.json()).to.eql({ ok: true });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/productions/{{productionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["productions", "{{productionId}}"]
+            },
+            "description": "Protected. Deletes production and cascades run sheet items, crew assignments, and equipment assignments."
+          },
+          "response": []
+        }
+      ],
+      "description": "Workflow 1 — Productions with embedded run sheets. All routes require authentication."
+    },
+    {
+      "name": "Crew",
+      "item": [
+        {
+          "name": "List Crew",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns paginated envelope', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('data');",
+                  "    pm.expect(json).to.have.property('meta');",
+                  "    pm.expect(json.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/crew?page=1&limit=10&search=&sort=name&order=asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["crew"],
+              "query": [
+                { "key": "page", "value": "1", "description": "Page number (default 1)" },
+                { "key": "limit", "value": "10", "description": "Page size, max 50 (default 10)" },
+                { "key": "search", "value": "", "description": "Optional text search on name, email, phone, and notes", "disabled": true },
+                { "key": "sort", "value": "name", "description": "name | role | email | phone", "disabled": true },
+                { "key": "order", "value": "asc", "description": "asc | desc", "disabled": true }
+              ]
+            },
+            "description": "Protected. Lists crew members for the authenticated user (paginated). Supports optional search, sort, and order."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Crew Member",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 or 200', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    pm.collectionVariables.set('crewMemberId', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"role\": \"CAMERAMAN\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"+639123456789\",\n  \"notes\": \"Lead camera operator\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/crew",
+              "host": ["{{baseUrl}}"],
+              "path": ["crew"]
+            },
+            "description": "Protected. Creates a crew member. Saves `crewMemberId` to collection variables."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Crew Member",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/crew/{{crewMemberId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["crew", "{{crewMemberId}}"]
+            },
+            "description": "Protected. Returns crew member detail."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Crew Member",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe (Updated)\",\n  \"role\": \"DIRECTOR\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/crew/{{crewMemberId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["crew", "{{crewMemberId}}"]
+            },
+            "description": "Protected. Updates crew member fields."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Crew Member",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns ok', function () {",
+                  "    pm.expect(pm.response.json()).to.eql({ ok: true });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/crew/{{crewMemberId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["crew", "{{crewMemberId}}"]
+            },
+            "description": "Protected. Deletes a crew member and cascades production assignments."
+          },
+          "response": []
+        }
+      ],
+      "description": "Workflow 2 — Crew inventory. Role values: CAMERAMAN, AUDIOMAN, OPERATOR, MIC_MAN, RUNNER, DIRECTOR, TALENT, VIDEO, EDITOR, PRODUCER, FLOOR, OTHER."
+    },
+    {
+      "name": "Equipment",
+      "item": [
+        {
+          "name": "List Equipment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns paginated envelope', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('data');",
+                  "    pm.expect(json).to.have.property('meta');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/equipment?page=1&limit=10&search=&sort=name&order=asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["equipment"],
+              "query": [
+                { "key": "page", "value": "1", "description": "Page number (default 1)" },
+                { "key": "limit", "value": "10", "description": "Page size, max 50 (default 10)" },
+                { "key": "search", "value": "", "description": "Optional text search on name and notes", "disabled": true },
+                { "key": "sort", "value": "name", "description": "name | category | quantity", "disabled": true },
+                { "key": "order", "value": "asc", "description": "asc | desc", "disabled": true }
+              ]
+            },
+            "description": "Protected. Lists equipment for the authenticated user (paginated). Supports optional search, sort, and order."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Equipment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 or 200', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    pm.collectionVariables.set('equipmentId', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sony FX3\",\n  \"category\": \"CAMERA\",\n  \"quantity\": 1,\n  \"notes\": \"Primary cinema camera\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/equipment",
+              "host": ["{{baseUrl}}"],
+              "path": ["equipment"]
+            },
+            "description": "Protected. Creates equipment. Saves `equipmentId` to collection variables."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Equipment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/equipment/{{equipmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["equipment", "{{equipmentId}}"]
+            },
+            "description": "Protected. Returns equipment detail."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Equipment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sony FX3 (Updated)\",\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/equipment/{{equipmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["equipment", "{{equipmentId}}"]
+            },
+            "description": "Protected. Updates equipment fields."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Equipment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns ok', function () {",
+                  "    pm.expect(pm.response.json()).to.eql({ ok: true });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/equipment/{{equipmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["equipment", "{{equipmentId}}"]
+            },
+            "description": "Protected. Deletes equipment and cascades production assignments."
+          },
+          "response": []
+        }
+      ],
+      "description": "Workflow 2 — Equipment inventory. Category values: CAMERA, AUDIO, LIGHTING, ELECTRICAL, VIDEO, LAPTOP, PC, OTHER."
+    },
+    {
+      "name": "Assignments",
+      "item": [
+        {
+          "name": "Replace Assignments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Has crew and equipment assignments', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.crewAssignments).to.be.an('array').that.is.not.empty;",
+                  "    pm.expect(json.equipmentAssignments).to.be.an('array').that.is.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"crewMemberIds\": [\"{{crewMemberId}}\"],\n  \"equipment\": [\n    {\n      \"equipmentId\": \"{{equipmentId}}\",\n      \"quantity\": 1\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/productions/{{productionId}}/assignments",
+              "host": ["{{baseUrl}}"],
+              "path": ["productions", "{{productionId}}", "assignments"]
+            },
+            "description": "Protected. Replaces all crew and equipment assignments for a production."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Production (verify assignments)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Includes assignment arrays', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('crewAssignments');",
+                  "    pm.expect(json).to.have.property('equipmentAssignments');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/productions/{{productionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["productions", "{{productionId}}"]
+            },
+            "description": "Protected. Verifies assignments are nested in production detail."
+          },
+          "response": []
+        }
+      ],
+      "description": "Workflow 2 — Assign crew and equipment to a production. Run Crew and Equipment create requests first."
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get VAPID Public Key",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns public key', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('publicKey');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/vapid-public-key",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "vapid-public-key"]
+            },
+            "description": "Public. Returns VAPID public key for browser push subscription."
+          },
+          "response": []
+        },
+        {
+          "name": "Subscribe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"endpoint\": \"https://fcm.googleapis.com/fcm/send/example-endpoint\",\n  \"keys\": {\n    \"p256dh\": \"BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpTfKuUgMKHiaWYIuE5yo2z2b0YlL2n3Q8KZ3Y4Y4Y4Y4Y\",\n    \"auth\": \"tBHItJI5svbpez7KI4CCXg\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/subscribe",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "subscribe"]
+            },
+            "description": "Protected. Registers a push subscription for the authenticated user. Replaces any other subscriptions for the same user. Returns `{ ok: true }`."
+          },
+          "response": []
+        },
+        {
+          "name": "List Notifications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns paginated notifications', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('data');",
+                  "    pm.expect(json).to.have.property('meta');",
+                  "    if (json.data.length > 0) {",
+                  "        pm.collectionVariables.set('notificationId', json.data[0].id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "description": "Protected. Lists notifications for the authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Unread Count",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns count', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('count');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/unread-count",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "unread-count"]
+            },
+            "description": "Protected. Returns unread notification count for sidebar badge."
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notificationId}}/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "{{notificationId}}", "read"]
+            },
+            "description": "Protected. Marks a single notification as read. Returns the updated notification item."
+          },
+          "response": []
+        },
+        {
+          "name": "Mark All Read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/read-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "read-all"]
+            },
+            "description": "Protected. Marks all notifications as read. Returns `{ updated: number }`."
+          },
+          "response": []
+        },
+        {
+          "name": "Unsubscribe",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"endpoint\": \"https://fcm.googleapis.com/fcm/send/example-endpoint\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/unsubscribe",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "unsubscribe"]
+            },
+            "description": "Protected. Removes a push subscription by endpoint. Returns `{ ok: true }`."
+          },
+          "response": []
+        },
+        {
+          "name": "Unsubscribe All",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 or 200', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('Returns ok', function () {",
+                  "    pm.expect(pm.response.json()).to.eql({ ok: true });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/unsubscribe-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "unsubscribe-all"]
+            },
+            "description": "Protected. Removes all push subscriptions for the authenticated user. Returns `{ ok: true }`."
+          },
+          "response": []
+        },
+        {
+          "name": "Run Reminders (dev)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/run-reminders",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "run-reminders"]
+            },
+            "description": "Protected. Dev-only manual trigger for upcoming production reminders (disabled in production)."
+          },
+          "response": []
+        }
+      ],
+      "description": "Push notifications — inbox, unread count, VAPID subscribe/unsubscribe/unsubscribe-all. Run Auth → Login first. Trigger reminders via Run Reminders (dev) for scheduled productions 24h or 2h before event start."
+    }
+  ]
+}
