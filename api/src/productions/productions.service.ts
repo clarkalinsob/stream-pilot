@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { NotificationType, Prisma, Production, ProductionStatus } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -232,12 +236,22 @@ export class ProductionsService {
     }
 
     if (uniqueEquipmentIds.length > 0) {
-      const equipmentCount = await this.prisma.equipment.count({
+      const equipmentItems = await this.prisma.equipment.findMany({
         where: { userId, id: { in: uniqueEquipmentIds } },
+        select: { id: true, name: true, quantity: true },
       });
 
-      if (equipmentCount !== uniqueEquipmentIds.length) {
+      if (equipmentItems.length !== uniqueEquipmentIds.length) {
         throw new NotFoundException('One or more equipment items not found');
+      }
+
+      for (const item of equipmentItems) {
+        const assignedQuantity = equipmentById.get(item.id) ?? 1;
+        if (assignedQuantity > item.quantity) {
+          throw new BadRequestException(
+            `Cannot assign ${assignedQuantity} of "${item.name}" — only ${item.quantity} available in inventory`,
+          );
+        }
       }
     }
 

@@ -1,4 +1,4 @@
-import { CrewRole, ProductionStatus } from '@prisma/client';
+import { CrewRole, EquipmentCategory, ProductionStatus } from '@prisma/client';
 import { ProductionSummary } from '../productions/productions.types';
 
 export type ProductionStatusCounts = Record<ProductionStatus, number>;
@@ -7,6 +7,13 @@ export type TopCrewMember = {
   id: string;
   name: string;
   role: CrewRole;
+  assignmentCount: number;
+};
+
+export type TopEquipment = {
+  id: string;
+  name: string;
+  category: EquipmentCategory;
   assignmentCount: number;
 };
 
@@ -23,6 +30,7 @@ export type DashboardStats = {
   equipment: {
     total: number;
     unassigned: number;
+    topBooked: TopEquipment[];
   };
   runSheet: {
     totalSegments: number;

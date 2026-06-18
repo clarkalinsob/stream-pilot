@@ -23,6 +23,7 @@ export class DashboardService {
       unassignedCrew,
       unassignedEquipment,
       topCrew,
+      topEquipment,
       upcomingProductions,
       runSheetAgg,
     ] = await Promise.all([
@@ -40,6 +41,12 @@ export class DashboardService {
         where: { userId, assignments: { none: {} } },
       }),
       this.prisma.crewMember.findMany({
+        where: { userId },
+        include: { _count: { select: { assignments: true } } },
+        orderBy: { assignments: { _count: 'desc' } },
+        take: 3,
+      }),
+      this.prisma.equipment.findMany({
         where: { userId },
         include: { _count: { select: { assignments: true } } },
         orderBy: { assignments: { _count: 'desc' } },
@@ -90,6 +97,12 @@ export class DashboardService {
       equipment: {
         total: equipmentTotal,
         unassigned: unassignedEquipment,
+        topBooked: topEquipment.map((item) => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          assignmentCount: item._count.assignments,
+        })),
       },
       runSheet: {
         totalSegments: runSheetAgg._count,

@@ -134,7 +134,11 @@ export default function DashboardPage() {
           <ResourceInsights
             stats={{
               crew: stats?.crew ?? { total: 0, unassigned: 0, topBooked: [] },
-              equipment: stats?.equipment ?? { total: 0, unassigned: 0 },
+              equipment: stats?.equipment ?? {
+                total: 0,
+                unassigned: 0,
+                topBooked: [],
+              },
             }}
             isLoading={showSkeleton}
           />

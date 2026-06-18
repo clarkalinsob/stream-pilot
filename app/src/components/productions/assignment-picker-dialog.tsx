@@ -53,6 +53,21 @@ export function AssignmentPickerDialog({
       .then(([crewResult, equipmentResult]) => {
         setCrew(crewResult.data);
         setEquipment(equipmentResult.data);
+        setSelectedEquipment((prev) =>
+          prev.map((selection) => {
+            const item = equipmentResult.data.find(
+              (entry) => entry.id === selection.equipmentId,
+            );
+            if (!item) return selection;
+            return {
+              ...selection,
+              quantity: Math.min(
+                Math.max(1, selection.quantity),
+                item.quantity,
+              ),
+            };
+          }),
+        );
       })
       .finally(() => setIsLoading(false));
   }, [open, initialCrewIds, initialEquipment]);
@@ -85,9 +100,34 @@ export function AssignmentPickerDialog({
     });
   }
 
-  function isEquipmentSelected(id: string) {
-    return selectedEquipment.some((x) => x.equipmentId === id);
+  function setEquipmentQuantity(id: string, raw: string) {
+    const item = equipment.find((entry) => entry.id === id);
+    if (!item) return;
+
+    const parsed = Number.parseInt(raw, 10);
+    const quantity = Number.isNaN(parsed)
+      ? 1
+      : Math.min(Math.max(1, parsed), item.quantity);
+
+    setSelectedEquipment((prev) =>
+      prev.map((selection) =>
+        selection.equipmentId === id ? { ...selection, quantity } : selection,
+      ),
+    );
   }
+
+  function getEquipmentSelection(id: string) {
+    return selectedEquipment.find((x) => x.equipmentId === id);
+  }
+
+  const hasInvalidEquipmentQuantity = selectedEquipment.some((selection) => {
+    const item = equipment.find((entry) => entry.id === selection.equipmentId);
+    return (
+      !item ||
+      selection.quantity < 1 ||
+      selection.quantity > item.quantity
+    );
+  });
 
   async function handleSubmit() {
     try {
@@ -110,7 +150,7 @@ export function AssignmentPickerDialog({
       onSubmit={handleSubmit}
       submitLabel="Save Assignments"
       isLoading={isSaving || isLoading}
-      submitDisabled={isLoading}
+      submitDisabled={isLoading || hasInvalidEquipmentQuantity}
       contentClassName="min-w-0 overflow-hidden sm:max-w-lg"
     >
       <div className="min-w-0 space-y-3">
@@ -180,29 +220,62 @@ export function AssignmentPickerDialog({
               </p>
             ) : (
               filteredEquipment.map((item) => {
-                const selected = isEquipmentSelected(item.id);
+                const selection = getEquipmentSelection(item.id);
+                const selected = !!selection;
                 return (
-                  <button
+                  <div
                     key={item.id}
-                    type="button"
-                    disabled={isSaving}
-                    onClick={() => toggleEquipment(item.id)}
-                    aria-pressed={selected}
                     className={cn(
-                      'flex w-full min-w-0 items-center gap-2 overflow-hidden rounded-md border px-2.5 py-1.5 text-left text-sm transition-colors',
+                      'flex w-full min-w-0 items-center gap-2 overflow-hidden rounded-md border px-2.5 py-1.5 text-sm transition-colors',
                       selected
                         ? 'border-primary bg-primary/5'
                         : 'hover:bg-muted/50',
                     )}
                   >
-                    <span className="min-w-0 flex-1 truncate" title={item.name}>
-                      {item.name}
-                    </span>
-                    <EquipmentCategoryBadge category={item.category} size="sm" />
+                    <button
+                      type="button"
+                      disabled={isSaving}
+                      onClick={() => toggleEquipment(item.id)}
+                      aria-pressed={selected}
+                      className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-left"
+                    >
+                      <span className="min-w-0 flex-1 truncate" title={item.name}>
+                        {item.name}
+                      </span>
+                      <EquipmentCategoryBadge category={item.category} size="sm" />
+                      {selected ? (
+                        <Check className="size-3.5 shrink-0 text-primary" aria-hidden />
+                      ) : null}
+                    </button>
                     {selected ? (
-                      <Check className="size-3.5 shrink-0 text-primary" aria-hidden />
+                      <div
+                        className="flex shrink-0 items-center gap-1.5"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <label
+                          htmlFor={`equipment-qty-${item.id}`}
+                          className="sr-only"
+                        >
+                          Quantity for {item.name}
+                        </label>
+                        <Input
+                          id={`equipment-qty-${item.id}`}
+                          type="number"
+                          min={1}
+                          max={item.quantity}
+                          value={selection.quantity}
+                          disabled={isSaving}
+                          onChange={(event) =>
+                            setEquipmentQuantity(item.id, event.target.value)
+                          }
+                          className="h-7 w-14 px-2 text-center text-xs"
+                        />
+                        <span className="text-xs text-muted-foreground">
+                          / {item.quantity}
+                        </span>
+                      </div>
                     ) : null}
-                  </button>
+                  </div>
                 );
               })
             )}

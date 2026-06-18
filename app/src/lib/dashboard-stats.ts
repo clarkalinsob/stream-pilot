@@ -12,6 +12,8 @@ export type StatusBreakdownItem = {
 
 const STATUS_ORDER: ProductionStatus[] = ['DRAFT', 'SCHEDULED', 'COMPLETED'];
 
+export const TOP_BOOKED_DISPLAY_LIMIT = 3;
+
 export function statusBreakdown(
   byStatus: ProductionStatusCounts,
   total: number,
@@ -43,6 +45,34 @@ export function hasUnassignedResources(
 
 export function totalUnassignedResources(stats: DashboardStats): number {
   return stats.crew.unassigned + stats.equipment.unassigned;
+}
+
+export function formatUnassignedResourcesMessage(
+  crew: { unassigned: number },
+  equipment: { unassigned: number },
+): string {
+  const parts: string[] = [];
+
+  if (crew.unassigned > 0) {
+    parts.push(
+      `${crew.unassigned} crew member${crew.unassigned === 1 ? '' : 's'}`,
+    );
+  }
+
+  if (equipment.unassigned > 0) {
+    parts.push(
+      `${equipment.unassigned} equipment item${equipment.unassigned === 1 ? '' : 's'}`,
+    );
+  }
+
+  if (parts.length === 0) return '';
+
+  const subject =
+    parts.length === 1 ? parts[0] : `${parts[0]} and ${parts[1]}`;
+  const totalUnassigned = crew.unassigned + equipment.unassigned;
+  const verb = totalUnassigned === 1 ? 'is' : 'are';
+
+  return `${subject} ${verb} not assigned to any production.`;
 }
 
 export function formatKpiValue(value: number | null | undefined): string {

@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { AlertTriangle, CheckCircle2, Package, Users } from 'lucide-react';
+import { AlertTriangle, Camera, CheckCircle2, Package, Users } from 'lucide-react';
 import type { DashboardStats } from '@/types/dashboard';
-import { hasAnyResources, hasUnassignedResources } from '@/lib/dashboard-stats';
+import { hasAnyResources, hasUnassignedResources, formatUnassignedResourcesMessage, TOP_BOOKED_DISPLAY_LIMIT } from '@/lib/dashboard-stats';
 import { CrewRoleBadge } from '@/components/resources/crew-role-badge';
+import { EquipmentCategoryBadge } from '@/components/resources/equipment-category-badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -21,6 +22,8 @@ type ResourceInsightsProps = {
 export function ResourceInsights({ stats, isLoading }: ResourceInsightsProps) {
   const hasResources = hasAnyResources(stats.crew, stats.equipment);
   const gaps = hasUnassignedResources(stats.crew, stats.equipment);
+  const topCrew = stats.crew.topBooked.slice(0, TOP_BOOKED_DISPLAY_LIMIT);
+  const topEquipment = stats.equipment.topBooked.slice(0, TOP_BOOKED_DISPLAY_LIMIT);
 
   return (
     <Card className="gap-3 py-4 shadow-none">
@@ -31,7 +34,10 @@ export function ResourceInsights({ stats, isLoading }: ResourceInsightsProps) {
         {isLoading ? (
           <>
             <Skeleton className="h-14 w-full" />
-            <Skeleton className="h-16 w-full" />
+            <div className="grid grid-cols-2 gap-3">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
           </>
         ) : (
           <>
@@ -67,11 +73,10 @@ export function ResourceInsights({ stats, isLoading }: ResourceInsightsProps) {
                       Resources need assignment
                     </p>
                     <p className="text-amber-800/80 dark:text-amber-200/80">
-                      {stats.crew.unassigned} crew member
-                      {stats.crew.unassigned === 1 ? '' : 's'} and{' '}
-                      {stats.equipment.unassigned} equipment item
-                      {stats.equipment.unassigned === 1 ? '' : 's'} are not
-                      assigned to any production.
+                      {formatUnassignedResourcesMessage(
+                        stats.crew,
+                        stats.equipment,
+                      )}
                     </p>
                   </>
                 ) : (
@@ -88,39 +93,76 @@ export function ResourceInsights({ stats, isLoading }: ResourceInsightsProps) {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium">Top booked crew</h4>
-                <Button asChild variant="ghost" size="sm" className="h-auto px-2 py-1 text-xs">
-                  <Link href="/resources">View all</Link>
-                </Button>
-              </div>
-              {stats.crew.topBooked.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Add crew members to track booking activity.
-                </p>
-              ) : (
-                <ul className="space-y-1.5">
-                  {stats.crew.topBooked.map((member) => (
-                    <li
-                      key={member.id}
-                      className="flex items-center justify-between gap-3 rounded-md border px-3 py-1.5"
-                    >
-                      <div className="flex min-w-0 items-center gap-2">
-                        <Users className="size-4 shrink-0 text-muted-foreground" />
-                        <span className="truncate text-sm font-medium">
-                          {member.name}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="min-w-0 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-sm font-medium">Top booked crew</h4>
+                  <Button asChild variant="ghost" size="sm" className="h-auto shrink-0 px-2 py-1 text-xs">
+                    <Link href="/resources">View all</Link>
+                  </Button>
+                </div>
+                {topCrew.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Add crew members to track booking activity.
+                  </p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {topCrew.map((member) => (
+                      <li
+                        key={member.id}
+                        className="flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5"
+                      >
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          <Users className="size-4 shrink-0 text-muted-foreground" />
+                          <span className="truncate text-sm font-medium">
+                            {member.name}
+                          </span>
+                          <CrewRoleBadge role={member.role} size="sm" />
+                        </div>
+                        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+                          {member.assignmentCount}{' '}
+                          {member.assignmentCount === 1 ? 'show' : 'shows'}
                         </span>
-                        <CrewRoleBadge role={member.role} size="sm" />
-                      </div>
-                      <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
-                        {member.assignmentCount}{' '}
-                        {member.assignmentCount === 1 ? 'show' : 'shows'}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div className="min-w-0 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-sm font-medium">Top booked equipment</h4>
+                  <Button asChild variant="ghost" size="sm" className="h-auto shrink-0 px-2 py-1 text-xs">
+                    <Link href="/resources">View all</Link>
+                  </Button>
+                </div>
+                {topEquipment.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Add equipment to track booking activity.
+                  </p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {topEquipment.map((item) => (
+                      <li
+                        key={item.id}
+                        className="flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5"
+                      >
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          <Camera className="size-4 shrink-0 text-muted-foreground" />
+                          <span className="truncate text-sm font-medium">
+                            {item.name}
+                          </span>
+                          <EquipmentCategoryBadge category={item.category} size="sm" />
+                        </div>
+                        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+                          {item.assignmentCount}{' '}
+                          {item.assignmentCount === 1 ? 'show' : 'shows'}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           </>
         )}

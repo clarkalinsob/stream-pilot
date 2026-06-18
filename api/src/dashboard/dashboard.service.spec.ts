@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CrewRole, ProductionStatus } from '@prisma/client';
+import { CrewRole, EquipmentCategory, ProductionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { DashboardService } from './dashboard.service';
 
@@ -16,6 +16,7 @@ describe('DashboardService', () => {
     };
     equipment: {
       count: jest.Mock;
+      findMany: jest.Mock;
     };
     runSheetItem: {
       aggregate: jest.Mock;
@@ -36,6 +37,7 @@ describe('DashboardService', () => {
       },
       equipment: {
         count: jest.fn(),
+        findMany: jest.fn(),
       },
       runSheetItem: {
         aggregate: jest.fn(),
@@ -64,6 +66,14 @@ describe('DashboardService', () => {
         name: 'Alex Rivera',
         role: CrewRole.CAMERAMAN,
         _count: { assignments: 4 },
+      },
+    ]);
+    prisma.equipment.findMany.mockResolvedValue([
+      {
+        id: 'equip-1',
+        name: 'Sony FX6',
+        category: EquipmentCategory.CAMERA,
+        _count: { assignments: 3 },
       },
     ]);
     prisma.production.findMany.mockResolvedValue([
@@ -115,7 +125,18 @@ describe('DashboardService', () => {
         },
       ],
     });
-    expect(result.equipment).toEqual({ total: 8, unassigned: 3 });
+    expect(result.equipment).toEqual({
+      total: 8,
+      unassigned: 3,
+      topBooked: [
+        {
+          id: 'equip-1',
+          name: 'Sony FX6',
+          category: EquipmentCategory.CAMERA,
+          assignmentCount: 3,
+        },
+      ],
+    });
     expect(result.runSheet).toEqual({
       totalSegments: 6,
       totalDurationMinutes: 180,
@@ -131,6 +152,7 @@ describe('DashboardService', () => {
     prisma.crewMember.count.mockResolvedValue(0);
     prisma.equipment.count.mockResolvedValue(0);
     prisma.crewMember.findMany.mockResolvedValue([]);
+    prisma.equipment.findMany.mockResolvedValue([]);
     prisma.production.findMany.mockResolvedValue([]);
     prisma.runSheetItem.aggregate.mockResolvedValue({
       _sum: { durationMinutes: null },
