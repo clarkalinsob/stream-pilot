@@ -2,7 +2,30 @@
 
 Livestream production planning platform — plan shows, build run sheets, and manage productions.
 
-## Run with Docker (recommended)
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center"><b>Dashboard</b><br><img src="docs/images/dashboard.png" width="480"/></td>
+    <td align="center"><b>Productions</b><br><img src="docs/images/productions.png" width="480"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Production detail</b><br><img src="docs/images/production-detail.png" width="480"/></td>
+    <td align="center"><b>Notifications</b><br><img src="docs/images/notifications.png" width="480"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Resources — crew</b><br><img src="docs/images/resources-crew.png" width="480"/></td>
+    <td align="center"><b>Resources — equipment</b><br><img src="docs/images/resources-equipment.png" width="480"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Login</b><br><img src="docs/images/login.png" width="480"/></td>
+    <td align="center"><b>Sign up</b><br><img src="docs/images/signup.png" width="480"/></td>
+  </tr>
+</table>
+
+## Quick start
+
+Requires [Docker](https://docs.docker.com/get-docker/) only — no host `pnpm install` needed.
 
 ```bash
 cp .env.example .env
@@ -14,26 +37,7 @@ Stop and remove containers with `docker compose down` (add `-v` to delete the Po
 - App: http://localhost:3000
 - API: http://localhost:3001
 - Migrations run automatically on API startup
-- Core features work without VAPID keys
-
-**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) only.
-
-No host `pnpm install` required — both Dockerfiles run `pnpm install --frozen-lockfile` during `docker build`.
-
-## Run without Docker
-
-```bash
-pnpm install          # required on host for local dev
-cp .env.example .env
-# Postgres running (e.g. docker compose up postgres)
-pnpm migrate:deploy
-pnpm dev:api   # terminal 1
-pnpm dev:app   # terminal 2
-```
-
-**Prerequisites:** pnpm 9.x, Node 20, Postgres.
-
-Adjust `DATABASE_URL` in `.env` for local Postgres (e.g. `localhost` instead of `postgres`).
+- Web push works out of the box with the VAPID keys in `.env.example`
 
 ## Architecture
 
@@ -97,8 +101,8 @@ Dashboard analytics on `/dashboard` (served by `GET /dashboard/stats`):
 2. On the **Dashboard**, review pipeline analytics, upcoming shows, and resource insights
 3. Go to **Productions** → **New Production**
 4. **Step 1:** Enter title, description, and event date → **Next**
-5. **Step 2:** Add run sheet segments → **Create production**
-6. On the production detail page, edit **Overview** or **Run Sheet** tabs and save
+5. **Step 2:** Add run sheet segments → **Create production** — new productions default to **Draft**
+6. On the production detail page, click **Edit** on the overview header or **Run Sheet** section, make changes, and save
 7. Return to the list — productions are paginated (10 per page)
 
 ### Workflow 2 — Resources & assignments
@@ -112,15 +116,15 @@ Dashboard analytics on `/dashboard` (served by `GET /dashboard/stats`):
 
 ## Push notifications (optional)
 
-**Optional.** The app runs fully without VAPID keys; placeholder values in `.env.example` are fine for login, productions, resources, and dashboard. Configure VAPID only to demo web push.
+**Optional**, but ready out of the box. `.env.example` already includes `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` — copy it to `.env` and you can try web push locally with no extra setup.
 
-Generate VAPID keys once and add them to `.env`:
+To generate your own keys (e.g. for production), run:
 
 ```bash
 npx web-push generate-vapid-keys
 ```
 
-Copy the output into `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and set `VAPID_SUBJECT` (e.g. `mailto:you@example.com`).
+Copy the output into `.env` and set `VAPID_SUBJECT` (e.g. `mailto:you@example.com`).
 
 ### Workflow 3 — Notifications
 
@@ -137,6 +141,7 @@ Web push works on `localhost` in Chrome, Edge, and Firefox. Production deploymen
 stream-pilot/
 ├── app/                  # Next.js frontend
 ├── api/                  # NestJS backend
+├── docs/images/          # README screenshots
 ├── postman/              # API collection
 ├── docker-compose.yml
 └── .env.example
