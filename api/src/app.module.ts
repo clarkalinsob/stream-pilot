@@ -7,6 +7,7 @@ import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { AppThrottlerGuard } from './common/guards/app-throttler.guard';
+import { shouldSkipAuthThrottler } from './common/guards/throttler-auth.util';
 import { CrewModule } from './crew/crew.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { EquipmentModule } from './equipment/equipment.module';
@@ -30,6 +31,7 @@ import { ProductionsModule } from './productions/productions.module';
           name: 'auth',
           ttl: Number(config.get('THROTTLE_AUTH_TTL_MS') ?? 60000),
           limit: Number(config.get('THROTTLE_AUTH_LIMIT') ?? 10),
+          skipIf: shouldSkipAuthThrottler,
         },
       ],
     }),
