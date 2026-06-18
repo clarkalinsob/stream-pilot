@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { buildListQueryString, getEffectiveSort } from '@/lib/list-query';
+import {
+  buildListQueryString,
+  getEffectiveSort,
+  listQueryKey,
+  resolveListQuery,
+} from '@/lib/list-query';
 
 describe('buildListQueryString', () => {
   it('builds pagination params', () => {
@@ -16,6 +21,44 @@ describe('buildListQueryString', () => {
     expect(
       buildListQueryString({ page: 1, limit: 10, search: ' morning ' }),
     ).toBe('page=1&limit=10&search=morning');
+  });
+});
+
+describe('resolveListQuery', () => {
+  it('does not carry over search when omitted from the next request', () => {
+    const previous = resolveListQuery({
+      page: 1,
+      limit: 10,
+      search: 'aldrin',
+      sort: 'name',
+      order: 'asc',
+    });
+
+    expect(
+      resolveListQuery({ page: 1, limit: 10, sort: 'name', order: 'asc' }, previous),
+    ).toEqual({
+      page: 1,
+      limit: 10,
+      sort: 'name',
+      order: 'asc',
+    });
+  });
+
+  it('includes search when provided', () => {
+    expect(resolveListQuery({ page: 1, limit: 10, search: ' aldrin ' })).toEqual({
+      page: 1,
+      limit: 10,
+      search: 'aldrin',
+    });
+  });
+
+  it('builds stable list query keys', () => {
+    expect(listQueryKey({ page: 1, limit: 10 })).toBe(
+      listQueryKey({ page: 1, limit: 10 }),
+    );
+    expect(listQueryKey({ page: 1, limit: 10, search: 'atem' })).not.toBe(
+      listQueryKey({ page: 1, limit: 10 }),
+    );
   });
 });
 

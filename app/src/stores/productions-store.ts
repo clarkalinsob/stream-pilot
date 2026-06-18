@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import * as productionsApi from '@/lib/productions';
 import { ApiError } from '@/lib/api';
-import type { ListQueryParams } from '@/lib/list-query';
+import { resolveListQuery, type ListQueryParams } from '@/lib/list-query';
 import { singleFlight } from '@/lib/single-flight';
 import type {
   CreateProductionData,
@@ -161,7 +161,7 @@ export const useProductionsStore = create<ProductionsState>((set, get) => {
   error: null,
 
   fetchProductions: async (params = {}) => {
-    const query = { ...lastProductionsFetchParams, ...params };
+    const query = resolveListQuery(params, lastProductionsFetchParams);
     lastProductionsFetchParams = query;
     set({ isLoading: true, error: null });
     try {

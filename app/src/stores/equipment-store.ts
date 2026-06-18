@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import * as equipmentApi from '@/lib/equipment';
 import { ApiError } from '@/lib/api';
-import type { ListQueryParams } from '@/lib/list-query';
+import { listQueryKey, resolveListQuery, type ListQueryParams } from '@/lib/list-query';
 import { singleFlight } from '@/lib/single-flight';
 import type {
   CreateEquipmentData,
@@ -20,7 +20,10 @@ type EquipmentState = {
   isLoading: boolean;
   isSaving: boolean;
   error: string | null;
-  fetchEquipment: (params?: FetchEquipmentParams) => Promise<void>;
+  fetchEquipment: (
+    params?: FetchEquipmentParams,
+    options?: { force?: boolean },
+  ) => Promise<void>;
   fetchEquipmentTotal: () => Promise<void>;
   createEquipment: (data: CreateEquipmentData) => Promise<EquipmentDetail>;
   updateEquipment: (
@@ -33,6 +36,7 @@ type EquipmentState = {
 
 let equipmentListRequestId = 0;
 let lastEquipmentFetchParams: FetchEquipmentParams = { page: 1, limit: 10 };
+let lastSuccessfulEquipmentQueryKey: string | null = null;
 
 export const useEquipmentStore = create<EquipmentState>((set, get) => {
   const createEquipment = singleFlight(async (data: CreateEquipmentData) => {
@@ -40,7 +44,10 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => {
     try {
       const created = await equipmentApi.createEquipment(data);
       const { pagination } = get();
-      await get().fetchEquipment({ page: 1, limit: pagination?.limit ?? 10 });
+      await Promise.all([
+        get().fetchEquipment({ page: 1, limit: pagination?.limit ?? 10 }, { force: true }),
+        get().fetchEquipmentTotal(),
+      ]);
       set({ isSaving: false });
       return created;
     } catch (err) {
@@ -90,7 +97,11 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => {
         const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
         const pageToFetch =
           currentPage > totalPages && totalPages > 0 ? totalPages : currentPage;
-        await get().fetchEquipment({ ...lastEquipmentFetchParams, page: pageToFetch });
+        await get().fetchEquipment(
+          { ...lastEquipmentFetchParams, page: pageToFetch },
+          { force: true },
+        );
+        await get().fetchEquipmentTotal();
         set({ isSaving: false });
         return pageToFetch;
       } catch (err) {
@@ -119,18 +130,28 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => {
     }
   },
 
-  fetchEquipment: async (params = {}) => {
+  fetchEquipment: async (params = {}, options = {}) => {
     const requestId = ++equipmentListRequestId;
-    const query = { ...lastEquipmentFetchParams, ...params };
+    const query = resolveListQuery(params, lastEquipmentFetchParams);
+    const key = listQueryKey(query);
     lastEquipmentFetchParams = query;
+
+    if (
+      !options.force &&
+      key === lastSuccessfulEquipmentQueryKey &&
+      get().pagination !== null
+    ) {
+      return;
+    }
+
     set({ isLoading: true, error: null });
     try {
       const result = await equipmentApi.listEquipment(query);
       if (requestId !== equipmentListRequestId) return;
+      lastSuccessfulEquipmentQueryKey = key;
       set({
         equipment: result.data,
         pagination: result.meta,
-        total: result.meta.total,
         isLoading: false,
       });
     } catch (err) {

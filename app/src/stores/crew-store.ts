@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import * as crewApi from '@/lib/crew';
 import { ApiError } from '@/lib/api';
-import type { ListQueryParams } from '@/lib/list-query';
+import { listQueryKey, resolveListQuery, type ListQueryParams } from '@/lib/list-query';
 import { singleFlight } from '@/lib/single-flight';
 import type {
   CreateCrewMemberData,
@@ -20,7 +20,7 @@ type CrewState = {
   isLoading: boolean;
   isSaving: boolean;
   error: string | null;
-  fetchCrew: (params?: FetchCrewParams) => Promise<void>;
+  fetchCrew: (params?: FetchCrewParams, options?: { force?: boolean }) => Promise<void>;
   fetchCrewTotal: () => Promise<void>;
   createCrewMember: (data: CreateCrewMemberData) => Promise<CrewMemberDetail>;
   updateCrewMember: (
@@ -33,6 +33,7 @@ type CrewState = {
 
 let crewListRequestId = 0;
 let lastCrewFetchParams: FetchCrewParams = { page: 1, limit: 10 };
+let lastSuccessfulCrewQueryKey: string | null = null;
 
 export const useCrewStore = create<CrewState>((set, get) => {
   const createCrewMember = singleFlight(async (data: CreateCrewMemberData) => {
@@ -40,7 +41,10 @@ export const useCrewStore = create<CrewState>((set, get) => {
     try {
       const created = await crewApi.createCrewMember(data);
       const { pagination } = get();
-      await get().fetchCrew({ page: 1, limit: pagination?.limit ?? 10 });
+      await Promise.all([
+        get().fetchCrew({ page: 1, limit: pagination?.limit ?? 10 }, { force: true }),
+        get().fetchCrewTotal(),
+      ]);
       set({ isSaving: false });
       return created;
     } catch (err) {
@@ -91,7 +95,8 @@ export const useCrewStore = create<CrewState>((set, get) => {
         const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
         const pageToFetch =
           currentPage > totalPages && totalPages > 0 ? totalPages : currentPage;
-        await get().fetchCrew({ ...lastCrewFetchParams, page: pageToFetch });
+        await get().fetchCrew({ ...lastCrewFetchParams, page: pageToFetch }, { force: true });
+        await get().fetchCrewTotal();
         set({ isSaving: false });
         return pageToFetch;
       } catch (err) {
@@ -120,18 +125,28 @@ export const useCrewStore = create<CrewState>((set, get) => {
     }
   },
 
-  fetchCrew: async (params = {}) => {
+  fetchCrew: async (params = {}, options = {}) => {
     const requestId = ++crewListRequestId;
-    const query = { ...lastCrewFetchParams, ...params };
+    const query = resolveListQuery(params, lastCrewFetchParams);
+    const key = listQueryKey(query);
     lastCrewFetchParams = query;
+
+    if (
+      !options.force &&
+      key === lastSuccessfulCrewQueryKey &&
+      get().pagination !== null
+    ) {
+      return;
+    }
+
     set({ isLoading: true, error: null });
     try {
       const result = await crewApi.listCrew(query);
       if (requestId !== crewListRequestId) return;
+      lastSuccessfulCrewQueryKey = key;
       set({
         crew: result.data,
         pagination: result.meta,
-        total: result.meta.total,
         isLoading: false,
       });
     } catch (err) {

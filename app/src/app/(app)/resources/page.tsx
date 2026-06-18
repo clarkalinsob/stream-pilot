@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useLayoutEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Camera, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -45,13 +45,16 @@ function ResourcesPageContent() {
     defaultSort,
     defaultOrder,
     setSort,
-    clearSort,
     search,
     inputValue,
     setInputValue,
     clearSearch,
+    freshQueryParams,
+    resetFilters,
   } = useListQuery({ defaultSort: 'name', defaultOrder: 'asc' });
   const [tab, setTab] = useState<ResourceTab>('crew');
+  const pendingTabResetRef = useRef(false);
+  const tabResetFetchDoneRef = useRef(false);
 
   const {
     crew,
@@ -101,11 +104,28 @@ function ResourcesPageContent() {
   const [deleteEquipmentTarget, setDeleteEquipmentTarget] =
     useState<EquipmentSummary | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (pathname !== '/resources') return;
 
     void fetchCrewTotal();
     void fetchEquipmentTotal();
+
+    if (pendingTabResetRef.current) {
+      if (!tabResetFetchDoneRef.current) {
+        tabResetFetchDoneRef.current = true;
+        if (tab === 'crew') {
+          void fetchCrew(freshQueryParams);
+        } else {
+          void fetchEquipment(freshQueryParams);
+        }
+      }
+
+      if (search === '') {
+        pendingTabResetRef.current = false;
+        tabResetFetchDoneRef.current = false;
+      }
+      return;
+    }
 
     if (tab === 'crew') {
       void fetchCrew(queryParams);
@@ -116,7 +136,9 @@ function ResourcesPageContent() {
   }, [
     pathname,
     tab,
+    search,
     queryParams,
+    freshQueryParams,
     fetchCrew,
     fetchCrewTotal,
     fetchEquipment,
@@ -132,10 +154,10 @@ function ResourcesPageContent() {
   };
 
   function handleTabChange(value: string) {
+    pendingTabResetRef.current = true;
+    tabResetFetchDoneRef.current = false;
+    resetFilters();
     setTab(value as ResourceTab);
-    setPage(1);
-    clearSort();
-    clearSearch();
   }
 
   async function openCrewEdit(member: CrewMemberSummary) {

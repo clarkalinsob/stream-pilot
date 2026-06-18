@@ -8,6 +8,34 @@ export type ListQueryParams = {
   search?: string;
 };
 
+export function resolveListQuery(
+  params: ListQueryParams = {},
+  defaults: ListQueryParams = { page: 1, limit: 10 },
+): Required<Pick<ListQueryParams, 'page' | 'limit'>> &
+  Pick<ListQueryParams, 'sort' | 'order' | 'search'> {
+  const query: Required<Pick<ListQueryParams, 'page' | 'limit'>> &
+    Pick<ListQueryParams, 'sort' | 'order' | 'search'> = {
+    page: params.page ?? defaults.page ?? 1,
+    limit: params.limit ?? defaults.limit ?? 10,
+  };
+
+  const search = params.search?.trim();
+  if (search) {
+    query.search = search;
+  }
+
+  if (params.sort) {
+    query.sort = params.sort;
+    query.order = params.order ?? 'asc';
+  }
+
+  return query;
+}
+
+export function listQueryKey(params: ListQueryParams): string {
+  return JSON.stringify(resolveListQuery(params));
+}
+
 export function buildListQueryString({
   page = 1,
   limit = 10,

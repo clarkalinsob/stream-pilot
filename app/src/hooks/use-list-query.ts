@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { usePagination } from '@/hooks/use-pagination';
 import { useTableSearch } from '@/hooks/use-table-search';
 import { useTableSort } from '@/hooks/use-table-sort';
@@ -13,6 +14,9 @@ type UseListQueryOptions = {
 };
 
 export function useListQuery(options: UseListQueryOptions = {}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { page, setPage, limit } = usePagination(options.defaultLimit);
   const sortState = useTableSort({
     defaultSort: options.defaultSort,
@@ -20,7 +24,7 @@ export function useListQuery(options: UseListQueryOptions = {}) {
   });
   const searchState = useTableSearch();
   const { sort, order } = sortState;
-  const { search } = searchState;
+  const { search, setInputValue } = searchState;
 
   const queryParams = useMemo(
     (): ListQueryParams => ({
@@ -32,6 +36,25 @@ export function useListQuery(options: UseListQueryOptions = {}) {
     [page, limit, search, sort, order],
   );
 
+  const freshQueryParams = useMemo(
+    (): ListQueryParams => ({
+      page: 1,
+      limit,
+    }),
+    [limit],
+  );
+
+  const resetFilters = useCallback(() => {
+    setInputValue('');
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('search');
+    params.delete('sort');
+    params.delete('order');
+    params.delete('page');
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  }, [pathname, router, searchParams, setInputValue]);
+
   return {
     page,
     setPage,
@@ -39,5 +62,7 @@ export function useListQuery(options: UseListQueryOptions = {}) {
     ...sortState,
     ...searchState,
     queryParams,
+    freshQueryParams,
+    resetFilters,
   };
 }
