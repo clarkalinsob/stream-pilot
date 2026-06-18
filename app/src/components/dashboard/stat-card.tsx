@@ -60,13 +60,13 @@ export function StatCard({
 
 export function StatCardSkeleton() {
   return (
-    <Card className="gap-4 py-5">
-      <CardHeader className="flex flex-row items-center justify-between px-5 pb-0">
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="size-4 rounded-full" />
+    <Card className="gap-2 py-3 shadow-none">
+      <CardHeader className="flex flex-row items-center justify-between px-4 pb-0">
+        <Skeleton className="h-3.5 w-24" />
+        <Skeleton className="size-3.5 rounded-full" />
       </CardHeader>
-      <CardContent className="px-5">
-        <Skeleton className="h-8 w-16" />
+      <CardContent className="px-4 pt-0">
+        <Skeleton className="h-6 w-16" />
       </CardContent>
     </Card>
   );

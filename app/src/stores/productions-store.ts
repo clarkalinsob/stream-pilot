@@ -64,7 +64,24 @@ export const useProductionsStore = create<ProductionsState>((set, get) => {
       set({ isSaving: true, error: null });
       try {
         const updated = await productionsApi.updateProduction(id, data);
-        set({ isSaving: false, current: updated });
+        set((state) => ({
+          isSaving: false,
+          current: state.current?.id === id ? updated : state.current,
+          productions: state.productions.map((production) =>
+            production.id === id
+              ? {
+                  id: updated.id,
+                  title: updated.title,
+                  eventDate: updated.eventDate,
+                  startTime: updated.startTime,
+                  endTime: updated.endTime,
+                  status: updated.status,
+                  segmentCount: updated.segmentCount,
+                  totalDurationMinutes: updated.totalDurationMinutes,
+                }
+              : production,
+          ),
+        }));
         return updated;
       } catch (err) {
         const message =

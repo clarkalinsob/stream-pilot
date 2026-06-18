@@ -65,7 +65,7 @@ export function EquipmentFormDialog({
   return (
     <FormDialog
       open={open}
-      title={isEdit ? 'Edit equipment' : 'Add Equipment'}
+      title={isEdit ? 'Edit Equipment' : 'Add Equipment'}
       description="Gear and inventory for your productions."
       onOpenChange={onOpenChange}
       onSubmit={handleSave}

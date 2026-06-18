@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import {
   Calendar,
+  Camera,
   Clapperboard,
-  Package,
   Users,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
@@ -61,82 +61,84 @@ export default function DashboardPage() {
       : undefined;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <PageHeader title="Dashboard" description={description} />
 
-      {error && (
-        <ErrorAlert message={error} onDismiss={() => setError('')} />
-      )}
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {showSkeleton ? (
-          <>
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-          </>
-        ) : (
-          <>
-            <StatCard
-              label="Productions"
-              value={formatKpiValue(stats?.productions.total)}
-              icon={Clapperboard}
-              href="/productions"
-            />
-            <StatCard
-              label="Scheduled"
-              value={formatKpiValue(stats?.productions.byStatus.SCHEDULED)}
-              icon={Calendar}
-              href="/productions"
-            />
-            <StatCard
-              label="Crew members"
-              value={formatKpiValue(stats?.crew.total)}
-              icon={Users}
-              href="/resources"
-            />
-            <StatCard
-              label="Equipment"
-              value={formatKpiValue(stats?.equipment.total)}
-              icon={Package}
-              href="/resources"
-            />
-          </>
+      <div className="flex flex-col gap-4">
+        {error && (
+          <ErrorAlert message={error} onDismiss={() => setError('')} />
         )}
-      </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
-        <StatusBreakdown
-          byStatus={
-            stats?.productions.byStatus ?? {
-              DRAFT: 0,
-              SCHEDULED: 0,
-              COMPLETED: 0,
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {showSkeleton ? (
+            <>
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+            </>
+          ) : (
+            <>
+              <StatCard
+                label="Productions"
+                value={formatKpiValue(stats?.productions.total)}
+                icon={Clapperboard}
+                href="/productions"
+              />
+              <StatCard
+                label="Scheduled"
+                value={formatKpiValue(stats?.productions.byStatus.SCHEDULED)}
+                icon={Calendar}
+                href="/productions"
+              />
+              <StatCard
+                label="Crew members"
+                value={formatKpiValue(stats?.crew.total)}
+                icon={Users}
+                href="/resources"
+              />
+              <StatCard
+                label="Equipment"
+                value={formatKpiValue(stats?.equipment.total)}
+                icon={Camera}
+                href="/resources"
+              />
+            </>
+          )}
+        </div>
+
+        <div className="grid gap-2 lg:grid-cols-2">
+          <StatusBreakdown
+            byStatus={
+              stats?.productions.byStatus ?? {
+                DRAFT: 0,
+                SCHEDULED: 0,
+                COMPLETED: 0,
+              }
             }
-          }
-          total={stats?.productions.total ?? 0}
-          isLoading={showSkeleton}
-        />
-        <UpcomingProductionsList
-          productions={stats?.upcomingProductions ?? []}
-          isLoading={showSkeleton}
-        />
-      </div>
+            total={stats?.productions.total ?? 0}
+            isLoading={showSkeleton}
+          />
+          <UpcomingProductionsList
+            productions={stats?.upcomingProductions ?? []}
+            isLoading={showSkeleton}
+          />
+        </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
-        <RunSheetSummary
-          totalSegments={stats?.runSheet.totalSegments ?? 0}
-          totalDurationMinutes={stats?.runSheet.totalDurationMinutes ?? 0}
-          isLoading={showSkeleton}
-        />
-        <ResourceInsights
-          stats={{
-            crew: stats?.crew ?? { total: 0, unassigned: 0, topBooked: [] },
-            equipment: stats?.equipment ?? { total: 0, unassigned: 0 },
-          }}
-          isLoading={showSkeleton}
-        />
+        <div className="grid gap-2 lg:grid-cols-2">
+          <RunSheetSummary
+            totalSegments={stats?.runSheet.totalSegments ?? 0}
+            totalDurationMinutes={stats?.runSheet.totalDurationMinutes ?? 0}
+            isLoading={showSkeleton}
+          />
+          <ResourceInsights
+            stats={{
+              crew: stats?.crew ?? { total: 0, unassigned: 0, topBooked: [] },
+              equipment: stats?.equipment ?? { total: 0, unassigned: 0 },
+            }}
+            isLoading={showSkeleton}
+          />
+        </div>
       </div>
     </div>
   );

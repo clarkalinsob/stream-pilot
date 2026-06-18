@@ -22,36 +22,36 @@ export function RunSheetSummary({
   isLoading,
 }: RunSheetSummaryProps) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+    <Card className="gap-3 py-4 shadow-none">
+      <CardHeader className="flex flex-row items-center justify-between px-4 pb-0">
         <CardTitle className="text-base">Run Sheet Summary</CardTitle>
         <Button asChild variant="ghost" size="sm" className="h-auto px-2 py-1 text-xs">
           <Link href="/productions">View productions</Link>
         </Button>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 pt-0">
         {isLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-lg border bg-muted/30 p-4">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="rounded-lg border bg-muted/30 p-3">
               <div className="flex items-center gap-2 text-muted-foreground">
-                <Clock className="size-4" />
-                <span className="text-sm">Total planned airtime</span>
+                <Clock className="size-3.5" />
+                <span className="text-xs">Total planned airtime</span>
               </div>
-              <p className="mt-2 text-2xl font-semibold">
+              <p className="mt-1.5 text-xl font-semibold">
                 {formatDuration(totalDurationMinutes)}
               </p>
             </div>
-            <div className="rounded-lg border bg-muted/30 p-4">
+            <div className="rounded-lg border bg-muted/30 p-3">
               <div className="flex items-center gap-2 text-muted-foreground">
-                <ListOrdered className="size-4" />
-                <span className="text-sm">Total segments</span>
+                <ListOrdered className="size-3.5" />
+                <span className="text-xs">Total segments</span>
               </div>
-              <p className="mt-2 text-2xl font-semibold">{totalSegments}</p>
+              <p className="mt-1.5 text-xl font-semibold">{totalSegments}</p>
             </div>
           </div>
         )}

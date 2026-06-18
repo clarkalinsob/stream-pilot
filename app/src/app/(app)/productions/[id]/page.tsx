@@ -283,17 +283,17 @@ function ProductionDetailContent() {
       </div>
 
       <DangerZone
-        description={`Permanently delete "${current.title}" and its run sheet. This action cannot be undone.`}
-        actionLabel="Delete Production"
+        description={`Permanently remove "${current.title}" and its run sheet. This action cannot be undone.`}
+        actionLabel="Remove Production"
         onAction={() => setShowDelete(true)}
         disabled={isSaving}
       />
 
       <ConfirmDialog
         open={showDelete}
-        title="Delete Production?"
-        description={`This will permanently delete "${current.title}" and its run sheet.`}
-        confirmLabel="Delete"
+        title="Remove production?"
+        description={`This will permanently remove "${current.title}" and its run sheet.`}
+        confirmLabel="Remove"
         variant="destructive"
         isLoading={isSaving}
         onConfirm={handleDelete}

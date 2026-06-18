@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { Users, Wrench } from 'lucide-react';
+import { Camera, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { CreateButton } from '@/components/shared/create-button';
@@ -267,7 +267,7 @@ function ResourcesPageContent() {
         <TabsContent value="equipment" className="mt-4 space-y-4">
           {isEmpty ? (
             <EmptyState
-              icon={Wrench}
+              icon={Camera}
               title="No equipment yet"
               description="Track cameras, mixers, mics, and other gear you use on productions."
               action={
@@ -317,7 +317,7 @@ function ResourcesPageContent() {
 
       <ConfirmDialog
         open={!!deleteCrewTarget}
-        title="Remove crew member?"
+        title="Remove Crew Member?"
         description={
           deleteCrewTarget
             ? `Remove "${deleteCrewTarget.name}" from your crew roster? They will be unassigned from any productions.`

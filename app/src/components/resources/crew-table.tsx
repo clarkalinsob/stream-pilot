@@ -70,7 +70,7 @@ export function createCrewColumns(actions: {
               className="text-destructive focus:text-destructive"
               onClick={() => actions.onDelete(row.original)}
             >
-              Delete
+              Remove
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

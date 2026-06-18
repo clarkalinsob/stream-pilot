@@ -12,7 +12,10 @@ import { PaginatedFooter } from '@/components/shared/paginated-footer';
 import { ProductionsTable } from '@/components/productions/productions-table';
 import { usePagination } from '@/hooks/use-pagination';
 import { useProductionsStore } from '@/stores/productions-store';
-import type { ProductionSummary } from '@/types/production';
+import type {
+  ProductionStatus,
+  ProductionSummary,
+} from '@/types/production';
 
 export default function ProductionsPage() {
   return (
@@ -32,6 +35,7 @@ function ProductionsPageContent() {
     isSaving,
     error,
     fetchProductions,
+    updateProduction,
     deleteProduction,
     clearError,
   } = useProductionsStore();
@@ -49,6 +53,17 @@ function ProductionsPageContent() {
     const nextPage = await deleteProduction(deleteTarget.id, page);
     setDeleteTarget(null);
     if (nextPage !== page) setPage(nextPage);
+  }
+
+  async function handleStatusChange(
+    production: ProductionSummary,
+    status: ProductionStatus,
+  ) {
+    try {
+      await updateProduction(production.id, { status });
+    } catch {
+      // error surfaced via store
+    }
   }
 
   const isEmpty = !isLoading && pagination?.total === 0;
@@ -79,6 +94,7 @@ function ProductionsPageContent() {
             data={productions}
             isLoading={isLoading}
             onRowClick={(id) => router.push(`/productions/${id}`)}
+            onStatusChange={handleStatusChange}
             onDelete={setDeleteTarget}
           />
           {pagination && (
@@ -93,13 +109,13 @@ function ProductionsPageContent() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="Delete Production?"
+        title="Remove production?"
         description={
           deleteTarget
-            ? `This will permanently delete "${deleteTarget.title}" and its run sheet.`
+            ? `This will permanently remove "${deleteTarget.title}" and its run sheet.`
             : ''
         }
-        confirmLabel="Delete"
+        confirmLabel="Remove"
         variant="destructive"
         isLoading={isSaving}
         onConfirm={handleDelete}

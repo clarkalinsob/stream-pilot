@@ -23,21 +23,21 @@ export function ResourceInsights({ stats, isLoading }: ResourceInsightsProps) {
   const gaps = hasUnassignedResources(stats.crew, stats.equipment);
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="gap-3 py-4 shadow-none">
+      <CardHeader className="px-4 pb-0">
         <CardTitle className="text-base">Resource Insights</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-5">
+      <CardContent className="space-y-3 px-4 pt-0">
         {isLoading ? (
           <>
+            <Skeleton className="h-14 w-full" />
             <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-20 w-full" />
           </>
         ) : (
           <>
             <div
               className={cn(
-                'flex gap-3 rounded-lg border p-4',
+                'flex gap-2 rounded-lg border p-3',
                 !hasResources
                   ? 'border-border bg-muted/40'
                   : gaps
@@ -46,13 +46,13 @@ export function ResourceInsights({ stats, isLoading }: ResourceInsightsProps) {
               )}
             >
               {!hasResources ? (
-                <Package className="size-5 shrink-0 text-muted-foreground" />
+                <Package className="size-4 shrink-0 text-muted-foreground" />
               ) : gaps ? (
-                <AlertTriangle className="size-5 shrink-0 text-amber-600 dark:text-amber-400" />
+                <AlertTriangle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
               ) : (
-                <CheckCircle2 className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
               )}
-              <div className="space-y-1 text-sm">
+              <div className="space-y-0.5 text-sm">
                 {!hasResources ? (
                   <>
                     <p className="font-medium">No resources yet</p>
@@ -88,7 +88,7 @@ export function ResourceInsights({ stats, isLoading }: ResourceInsightsProps) {
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-medium">Top booked crew</h4>
                 <Button asChild variant="ghost" size="sm" className="h-auto px-2 py-1 text-xs">
@@ -100,11 +100,11 @@ export function ResourceInsights({ stats, isLoading }: ResourceInsightsProps) {
                   Add crew members to track booking activity.
                 </p>
               ) : (
-                <ul className="space-y-2">
+                <ul className="space-y-1.5">
                   {stats.crew.topBooked.map((member) => (
                     <li
                       key={member.id}
-                      className="flex items-center justify-between gap-3 rounded-md border px-3 py-2"
+                      className="flex items-center justify-between gap-3 rounded-md border px-3 py-1.5"
                     >
                       <div className="flex min-w-0 items-center gap-2">
                         <Users className="size-4 shrink-0 text-muted-foreground" />

@@ -1,6 +1,12 @@
 import type { ProductionStatus } from '@/types/production';
 import { cn } from '@/lib/utils';
 
+export const PRODUCTION_STATUSES: ProductionStatus[] = [
+  'DRAFT',
+  'SCHEDULED',
+  'COMPLETED',
+];
+
 const statusStyles: Record<
   ProductionStatus,
   { label: string; className: string }
@@ -21,6 +27,10 @@ const statusStyles: Record<
       'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-200',
   },
 };
+
+export function getProductionStatusLabel(status: ProductionStatus) {
+  return statusStyles[status].label;
+}
 
 type ProductionStatusBadgeProps = {
   status: ProductionStatus;

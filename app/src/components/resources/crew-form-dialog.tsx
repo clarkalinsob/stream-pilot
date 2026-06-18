@@ -65,7 +65,7 @@ export function CrewFormDialog({
   return (
     <FormDialog
       open={open}
-      title={isEdit ? 'Edit crew member' : 'Add Crew Member'}
+      title={isEdit ? 'Edit Crew Member' : 'Add Crew Member'}
       description="People you work with on productions."
       onOpenChange={onOpenChange}
       onSubmit={handleSave}

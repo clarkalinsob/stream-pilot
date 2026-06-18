@@ -45,11 +45,11 @@ export function StatusBreakdown({
   const items = statusBreakdown(byStatus, total);
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="gap-3 py-4 shadow-none">
+      <CardHeader className="px-4 pb-0">
         <CardTitle className="text-base">Production Pipeline</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 px-4 pt-0">
         {isLoading ? (
           <>
             <Skeleton className="h-4 w-full" />
@@ -65,7 +65,7 @@ export function StatusBreakdown({
           items.map((item) => {
             const config = statusConfig[item.status];
             return (
-              <div key={item.status} className="space-y-1.5">
+              <div key={item.status} className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
                   <span className={cn('font-medium', config.textClass)}>
                     {config.label}
