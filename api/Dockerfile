@@ -13,8 +13,11 @@ RUN pnpm install --frozen-lockfile --filter stream-pilot-api
 
 COPY api ./api
 
+RUN chmod +x /app/api/docker-entrypoint.sh
+
 WORKDIR /app/api
 
 EXPOSE 3001
 
-CMD ["pnpm", "run", "start:dev"]
+ENTRYPOINT ["/app/api/docker-entrypoint.sh"]
+CMD ["pnpm", "run", "start:dev:docker"]
