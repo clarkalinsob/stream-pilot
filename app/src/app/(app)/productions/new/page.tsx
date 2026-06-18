@@ -18,6 +18,7 @@ import {
   type ProductionDetailsValues,
 } from '@/components/productions/production-details-fields';
 import { RunSheetView } from '@/components/productions/run-sheet-view';
+import { toStartsAt } from '@/lib/format';
 import {
   createEmptySegment,
   sumDurationMinutes,
@@ -93,6 +94,7 @@ export default function NewProductionPage() {
         description: details.description.trim() || undefined,
         eventDate: details.eventDate,
         startTime: details.startTime,
+        startsAt: toStartsAt(details.eventDate, details.startTime),
         runSheetItems: toApiPayload(segments),
       });
       router.push(`/productions/${created.id}`);

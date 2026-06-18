@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, ChevronsUpDown, LogOut } from 'lucide-react';
+import { ChevronsUpDown, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -82,11 +82,6 @@ export function NavUser() {
               </DropdownMenuLabel>
             ) : null}
             {user ? <DropdownMenuSeparator /> : null}
-            <DropdownMenuItem disabled={!user}>
-              <Bell />
-              Notifications
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
               Log out

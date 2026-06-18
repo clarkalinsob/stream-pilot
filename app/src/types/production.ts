@@ -86,6 +86,7 @@ export type CreateProductionData = {
   description?: string;
   eventDate: string;
   startTime: string;
+  startsAt: string;
   runSheetItems: RunSheetItem[];
 };
 
@@ -94,5 +95,6 @@ export type UpdateProductionData = {
   description?: string | null;
   eventDate?: string | null;
   startTime?: string | null;
+  startsAt?: string | null;
   status?: ProductionStatus;
 };

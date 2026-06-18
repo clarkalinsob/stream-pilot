@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { HeaderNotifications } from '@/components/header-notifications';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -30,8 +31,8 @@ export function AppHeader() {
   const segments = getBreadcrumbs(pathname, { productionTitle });
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 print:hidden">
-      <div className="flex items-center gap-2 px-4">
+    <header className="flex shrink-0 items-center justify-between gap-4 border-b bg-background px-4 py-3 print:hidden">
+      <div className="flex min-w-0 items-center gap-2">
         <SidebarTrigger className="-ml-1" />
         <Separator
           orientation="vertical"
@@ -58,6 +59,9 @@ export function AppHeader() {
             })}
           </BreadcrumbList>
         </Breadcrumb>
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
+        <HeaderNotifications />
       </div>
     </header>
   );

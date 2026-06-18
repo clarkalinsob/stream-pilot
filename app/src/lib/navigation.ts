@@ -1,4 +1,5 @@
 import {
+  Bell,
   Clapperboard,
   LayoutDashboard,
   Users,
@@ -11,6 +12,12 @@ export type NavItem = {
   icon: LucideIcon;
 };
 
+export const notificationsNavItem: NavItem = {
+  title: 'Notifications',
+  href: '/notifications',
+  icon: Bell,
+};
+
 export const mainNavItems: NavItem[] = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { title: 'Productions', href: '/productions', icon: Clapperboard },
@@ -20,7 +27,7 @@ export const mainNavItems: NavItem[] = [
 export function getPageTitle(pathname: string): string {
   if (pathname === '/productions/new') return 'New Production';
   if (pathname.match(/^\/productions\/[^/]+$/)) return 'Production';
-  const item = mainNavItems.find(
+  const item = [...mainNavItems, notificationsNavItem].find(
     (nav) => pathname === nav.href || pathname.startsWith(`${nav.href}/`),
   );
   return item?.title ?? 'Stream Pilot';

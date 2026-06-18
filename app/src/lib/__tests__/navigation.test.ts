@@ -6,6 +6,7 @@ describe('getPageTitle', () => {
     expect(getPageTitle('/dashboard')).toBe('Dashboard');
     expect(getPageTitle('/productions')).toBe('Productions');
     expect(getPageTitle('/resources')).toBe('Resources');
+    expect(getPageTitle('/notifications')).toBe('Notifications');
   });
 
   it('returns New Production for the wizard route', () => {

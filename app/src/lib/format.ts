@@ -58,3 +58,14 @@ export function buildEventStartDate(
   const [hours, minutes] = startTime.split(':').map(Number);
   return new Date(year, month - 1, day, hours, minutes, 0, 0);
 }
+
+export function toStartsAt(
+  eventDate: string,
+  startTime: string,
+): string {
+  const start = buildEventStartDate(eventDate, startTime);
+  if (!start) {
+    throw new Error('Event date and start time are required');
+  }
+  return start.toISOString();
+}

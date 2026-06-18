@@ -12,6 +12,7 @@ import type { ProductionDetailsValues } from '@/components/productions/productio
 import { RunSheetView } from '@/components/productions/run-sheet-view';
 import { ProductionAssignmentsPanel } from '@/components/productions/production-assignments-panel';
 import { fromApiItems, toApiPayload, type RunSheetSegmentDraft } from '@/lib/run-sheet';
+import { toStartsAt } from '@/lib/format';
 import {
   getProductionDetailsErrors,
   getRunSheetSegmentErrors,
@@ -136,6 +137,10 @@ function ProductionDetailContent() {
         description: details.description.trim() || null,
         eventDate: details.eventDate || null,
         startTime: details.startTime || null,
+        startsAt:
+          details.eventDate && details.startTime
+            ? toStartsAt(details.eventDate, details.startTime)
+            : null,
         status: details.status,
       });
       setDetailsDirty(false);
