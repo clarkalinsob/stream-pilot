@@ -17,6 +17,7 @@ import { StatCard, StatCardSkeleton } from '@/components/dashboard/stat-card';
 import { StatusBreakdown } from '@/components/dashboard/status-breakdown';
 import { UpcomingProductionsList } from '@/components/dashboard/upcoming-productions-list';
 import { ErrorAlert } from '@/components/shared/error-alert';
+import { PageHeader } from '@/components/shared/page-header';
 
 export default function DashboardPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -53,19 +54,15 @@ export default function DashboardPage() {
 
   const showSkeleton = isLoading && !stats;
 
+  const description = isAuthLoading && !user
+    ? 'Loading…'
+    : user
+      ? `Welcome back, ${user.firstName}! Overview of your productions and resources.`
+      : undefined;
+
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
-        {isAuthLoading && !user ? (
-          <p className="mt-1 text-sm text-muted-foreground">Loading…</p>
-        ) : user ? (
-          <p className="mt-1 text-sm text-muted-foreground">
-            Welcome back, {user.firstName}! Overview of your productions and
-            resources.
-          </p>
-        ) : null}
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Dashboard" description={description} />
 
       {error && (
         <ErrorAlert message={error} onDismiss={() => setError('')} />
