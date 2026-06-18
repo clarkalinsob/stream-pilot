@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Printer, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -394,39 +394,47 @@ export function RunSheetView({
               </p>
             )}
           </div>
-          {(showEditAction || showSaveActions) && (
-            <div className="flex shrink-0 gap-2 print:hidden">
-              {showSaveActions ? (
-                <>
-                  {onCancel && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={isSaving}
-                      onClick={onCancel}
-                    >
-                      Cancel
-                    </Button>
-                  )}
-                  {onSave && (
-                    <Button
-                      size="sm"
-                      loading={isSaving}
-                      disabled={isSaving || saveDisabled}
-                      onClick={onSave}
-                    >
-                      {isSaving ? 'Saving…' : 'Save'}
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <Button variant="outline" size="sm" onClick={onEdit}>
-                  <Pencil />
-                  Edit
-                </Button>
-              )}
-            </div>
-          )}
+          <div className="flex shrink-0 gap-2 print:hidden">
+            {!isEditing && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.print()}
+              >
+                <Printer />
+                Print
+              </Button>
+            )}
+            {showSaveActions ? (
+              <>
+                {onCancel && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isSaving}
+                    onClick={onCancel}
+                  >
+                    Cancel
+                  </Button>
+                )}
+                {onSave && (
+                  <Button
+                    size="sm"
+                    loading={isSaving}
+                    disabled={isSaving || saveDisabled}
+                    onClick={onSave}
+                  >
+                    {isSaving ? 'Saving…' : 'Save'}
+                  </Button>
+                )}
+              </>
+            ) : showEditAction ? (
+              <Button variant="outline" size="sm" onClick={onEdit}>
+                <Pencil />
+                Edit
+              </Button>
+            ) : null}
+          </div>
         </div>
       </header>
 
