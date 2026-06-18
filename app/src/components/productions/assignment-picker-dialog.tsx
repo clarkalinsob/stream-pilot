@@ -39,11 +39,15 @@ export function AssignmentPickerDialog({
   const [selectedEquipment, setSelectedEquipment] = useState<
     { equipmentId: string; quantity: number }[]
   >([]);
+  const [quantityDrafts, setQuantityDrafts] = useState<Record<string, string>>(
+    {},
+  );
 
   useEffect(() => {
     if (!open) return;
     setSelectedCrewIds(initialCrewIds);
     setSelectedEquipment(initialEquipment);
+    setQuantityDrafts({});
     setSearch('');
     setIsLoading(true);
     Promise.all([
@@ -93,27 +97,82 @@ export function AssignmentPickerDialog({
   }
 
   function toggleEquipment(id: string) {
-    setSelectedEquipment((prev) => {
-      const exists = prev.find((x) => x.equipmentId === id);
-      if (exists) return prev.filter((x) => x.equipmentId !== id);
-      return [...prev, { equipmentId: id, quantity: 1 }];
-    });
+    const exists = selectedEquipment.some((entry) => entry.equipmentId === id);
+
+    if (exists) {
+      setQuantityDrafts((drafts) => {
+        const next = { ...drafts };
+        delete next[id];
+        return next;
+      });
+      setSelectedEquipment((prev) =>
+        prev.filter((entry) => entry.equipmentId !== id),
+      );
+      return;
+    }
+
+    setSelectedEquipment((prev) => [...prev, { equipmentId: id, quantity: 1 }]);
   }
 
-  function setEquipmentQuantity(id: string, raw: string) {
+  function clampEquipmentQuantity(raw: string, maxQuantity: number): number {
+    const parsed = Number.parseInt(raw.trim(), 10);
+    if (Number.isNaN(parsed) || parsed < 1) {
+      return 1;
+    }
+    return Math.min(parsed, maxQuantity);
+  }
+
+  function getQuantityInputValue(id: string, committedQuantity: number) {
+    return quantityDrafts[id] ?? String(committedQuantity);
+  }
+
+  function setEquipmentQuantityDraft(id: string, raw: string) {
+    if (raw !== '' && !/^\d+$/.test(raw)) {
+      return;
+    }
+
+    setQuantityDrafts((prev) => ({ ...prev, [id]: raw }));
+  }
+
+  function commitEquipmentQuantity(id: string, rawValue?: string) {
     const item = equipment.find((entry) => entry.id === id);
     if (!item) return;
 
-    const parsed = Number.parseInt(raw, 10);
-    const quantity = Number.isNaN(parsed)
-      ? 1
-      : Math.min(Math.max(1, parsed), item.quantity);
+    const raw = rawValue ?? quantityDrafts[id];
+    if (raw === undefined) return;
+
+    const quantity = clampEquipmentQuantity(raw, item.quantity);
 
     setSelectedEquipment((prev) =>
-      prev.map((selection) =>
-        selection.equipmentId === id ? { ...selection, quantity } : selection,
+      prev.map((entry) =>
+        entry.equipmentId === id ? { ...entry, quantity } : entry,
       ),
     );
+    setQuantityDrafts((prev) => {
+      if (!(id in prev)) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }
+
+  function commitAllEquipmentQuantities(
+    equipmentSelection: { equipmentId: string; quantity: number }[],
+  ) {
+    return equipmentSelection.map((selection) => {
+      const item = equipment.find((entry) => entry.id === selection.equipmentId);
+      if (!item) return selection;
+
+      const draft = quantityDrafts[selection.equipmentId];
+      if (draft === undefined) {
+        return selection;
+      }
+
+      return {
+        ...selection,
+        quantity: clampEquipmentQuantity(draft, item.quantity),
+      };
+    });
   }
 
   function getEquipmentSelection(id: string) {
@@ -122,18 +181,24 @@ export function AssignmentPickerDialog({
 
   const hasInvalidEquipmentQuantity = selectedEquipment.some((selection) => {
     const item = equipment.find((entry) => entry.id === selection.equipmentId);
+    if (!item) return true;
+
+    const raw = quantityDrafts[selection.equipmentId] ?? String(selection.quantity);
+    const parsed = Number.parseInt(raw.trim(), 10);
     return (
-      !item ||
-      selection.quantity < 1 ||
-      selection.quantity > item.quantity
+      Number.isNaN(parsed) ||
+      parsed < 1 ||
+      parsed > item.quantity
     );
   });
 
   async function handleSubmit() {
+    const equipment = commitAllEquipmentQuantities(selectedEquipment);
+
     try {
       await onSave({
         crewMemberIds: selectedCrewIds,
-        equipment: selectedEquipment,
+        equipment,
       });
       onOpenChange(false);
     } catch {
@@ -260,13 +325,15 @@ export function AssignmentPickerDialog({
                         </label>
                         <Input
                           id={`equipment-qty-${item.id}`}
-                          type="number"
-                          min={1}
-                          max={item.quantity}
-                          value={selection.quantity}
+                          type="text"
+                          inputMode="numeric"
+                          value={getQuantityInputValue(item.id, selection.quantity)}
                           disabled={isSaving}
                           onChange={(event) =>
-                            setEquipmentQuantity(item.id, event.target.value)
+                            setEquipmentQuantityDraft(item.id, event.target.value)
+                          }
+                          onBlur={(event) =>
+                            commitEquipmentQuantity(item.id, event.target.value)
                           }
                           className="h-7 w-14 px-2 text-center text-xs"
                         />
